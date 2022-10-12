@@ -1,14 +1,18 @@
-* { box-sizing: border-box; }
 html {
     --celadon-blue: #0081afff;
     --cyan-process: #00abe7ff;
     --vivid-sky-blue: #2dc7ffff;
     --wheat: #ead2acff;
     --sunray: #eaba6bff;
+    --gap-small: 10px;
 }
 html, body {
-    min-height: 100%;
+    height: 100%;
     font-family: Arial;
     background-color: white;
     color: var(--celadon-blue);
+    margin: 0;
+}
+body {
+    padding: var(--gap-small);
 }

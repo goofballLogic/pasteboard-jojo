@@ -9,6 +9,6 @@ html {
 html, body {
     min-height: 100%;
     font-family: Arial;
-    background-color: var(--wheat);
+    background-color: white;
     color: var(--celadon-blue);
 }

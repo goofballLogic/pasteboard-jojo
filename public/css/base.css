@@ -1,4 +1,14 @@
 * { box-sizing: border-box; }
+html {
+    --celadon-blue: #0081afff;
+    --cyan-process: #00abe7ff;
+    --vivid-sky-blue: #2dc7ffff;
+    --wheat: #ead2acff;
+    --sunray: #eaba6bff;
+}
 html, body {
     min-height: 100%;
+    font-family: Arial;
+    background-color: var(--wheat);
+    color: var(--celadon-blue);
 }

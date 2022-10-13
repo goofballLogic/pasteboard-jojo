@@ -17,15 +17,23 @@ nav {
     display: flex;
     gap: var(--size-small);
 }
+nav > * {
+    padding: var(--size-small);
+}
 nav a {
     color: black !important;
     text-decoration: none;
     width: calc(9*var(--size-small));
     text-align: center;
-    padding: var(--size-small);
 }
 nav a:hover {
     background-color: #00000022;
+}
+nav .status {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--size-small);
 }
 body > .loading {
 

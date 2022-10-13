@@ -1,18 +1,29 @@
-html {
-    --celadon-blue: #0081afff;
-    --cyan-process: #00abe7ff;
-    --vivid-sky-blue: #2dc7ffff;
-    --wheat: #ead2acff;
-    --sunray: #eaba6bff;
-    --gap-small: 10px;
+* {
+    box-sizing: border-box;
 }
 html, body {
+    --size-small: 10px;
+    --size-medium: 15px;
+    --size-large: 25px;
     height: 100%;
     font-family: Arial;
-    background-color: white;
-    color: var(--celadon-blue);
     margin: 0;
+    font-size: var(--size-medium);
 }
-body {
-    padding: var(--gap-small);
+main {
+    padding: var(--size-large);
+}
+nav {
+    display: flex;
+    gap: var(--size-small);
+}
+nav a {
+    color: black !important;
+    text-decoration: none;
+    width: calc(9*var(--size-small));
+    text-align: center;
+    padding: var(--size-small);
+}
+nav a:hover {
+    background-color: #00000022;
 }

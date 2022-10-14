@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: install firebase
         run: npm i firebase-tools -g
-        
+
       - name: deploy
-        run: firebase deploy
+        run: firebase login && firebase deploy

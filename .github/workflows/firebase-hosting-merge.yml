@@ -20,4 +20,4 @@ jobs:
       - name: Deploy
         run: firebase deploy
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PASTE_1C305 }}

@@ -1,6 +1,7 @@
 import "/__/firebase/9.12.0/firebase-app-compat.js";
 import "/__/firebase/9.12.0/firebase-auth-compat.js";
 import "/__/firebase/9.12.0/firebase-functions-compat.js";
+import "/__/firebase/9.12.0/firebase-firestore-compat.js";
 import "/__/firebase/init.js?useEmulator=true&region=europe-west2";
 import { nav, main } from "./views.js"
 
@@ -37,11 +38,12 @@ function handleSubmit(app, target) {
     if (target.classList.contains("testing"))
         return async function (e) {
             e.preventDefault();
-            console.log(app);
             const functions = app.functions();
-            console.log(functions);
             const result = await functions.httpsCallable("fetchUserContext")({ "hello": "world" })
-            console.log(result.data);
+            console.log("fetchUserContext says", result.data);
+
+            const firestore = app.firestore();
+            console.log(firestore);
 
         };
 

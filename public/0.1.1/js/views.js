@@ -40,8 +40,8 @@ export function main(model) {
     return `
         <main>
             Using Firebase features: ${model.features.join(", ")}
-            <form action="/>
-                <button >Test<button>
+            <form action="/" class="testing">
+                <button>Test</button>
             </form>
         </main>
     `;

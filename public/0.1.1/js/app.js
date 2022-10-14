@@ -1,6 +1,7 @@
 import "/__/firebase/9.12.0/firebase-app-compat.js";
 import "/__/firebase/9.12.0/firebase-auth-compat.js";
-import "/__/firebase/init.js?useEmulator=true";
+import "/__/firebase/9.12.0/firebase-functions-compat.js";
+import "/__/firebase/init.js?useEmulator=true&region=europe-west2";
 import { nav, main } from "./views.js"
 
 async function googleSignIn(app) {
@@ -29,6 +30,21 @@ function handleClick(app, target) {
             await firebase.auth(app).signOut();
         }
     }
+}
+
+function handleSubmit(app, target) {
+
+    if (target.classList.contains("testing"))
+        return async function (e) {
+            e.preventDefault();
+            console.log(app);
+            const functions = app.functions();
+            console.log(functions);
+            const result = await functions.httpsCallable("fetchUserContext")({ "hello": "world" })
+            console.log(result.data);
+
+        };
+
 }
 
 const model = {};
@@ -87,5 +103,8 @@ function renderNav(app) {
 function registerListeners(container, app) {
     for (const button of container.querySelectorAll("button")) {
         button.addEventListener("click", handleClick(app, button));
+    }
+    for (const form of container.querySelectorAll("form")) {
+        form.addEventListener("submit", handleSubmit(app, form));
     }
 }

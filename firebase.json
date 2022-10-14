@@ -21,6 +21,8 @@
   ],
   "emulators": {
     "functions": {
+      "name": "functions",
+      "host": "localhost",
       "port": 5001
     },
     "hosting": {
@@ -33,5 +35,8 @@
       "enabled": true
     },
     "singleProjectMode": true
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }

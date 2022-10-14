@@ -11,8 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: install firebase
-        run: npm i firebase-tools -g
+      - name: Install firebase tools
+        run: npm install firebase-tools -g
 
-      - name: deploy
-        run: firebase deploy --token=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy
+        run: firebase deploy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}

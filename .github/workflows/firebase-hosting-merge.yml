@@ -12,5 +12,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: install firebase
+        run: npm i firebase-tools -g
       - uses: actions/checkout@v2
-      - run: firebase deploy
+      - name: deploy
+        run: firebase deploy

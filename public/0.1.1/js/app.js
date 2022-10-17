@@ -3,7 +3,8 @@ import "/__/firebase/9.12.0/firebase-auth-compat.js";
 import "/__/firebase/9.12.0/firebase-functions-compat.js";
 import "/__/firebase/9.12.0/firebase-firestore-compat.js";
 import "/__/firebase/init.js?useEmulator=true&region=europe-west2";
-import { nav, main } from "./views.js"
+import { nav, main, errorToast } from "./views.js"
+import "./editor.js";
 
 async function googleSignIn(app) {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -18,38 +19,76 @@ async function emailSignIn(app) {
     await auth.signInWithEmailAndPassword(email, password);
 }
 
-function handleClick(app, target) {
+const eventHandlers = [
+    ["sign-in", (app, target) => {
 
-    if (target.classList.contains("sign-in")) {
         const authStrategy = target.classList.contains("google") ? googleSignIn : emailSignIn;
         return async function signIn() {
             await authStrategy(app);
         }
+
+    }],
+    ["sign-out", app => async () => {
+
+        await firebase.auth(app).signOut();
+
+    }],
+    ["new-board", (app, form) => async e => {
+
+        e.preventDefault();
+        const data = new FormData(form);
+        const board = {
+            id: `${model.user?.uid}_${Date.now()}`,
+            name: data.get("name")
+        };
+        const functions = app.functions();
+        try {
+
+            const createBoard = await functions.httpsCallable("createBoard")(board);
+            console.log("createBoard says", createBoard);
+            model.metadata.entitlements = createBoard.data.entitlements;
+            await fetchBoardMetadata(app);
+            renderMain(app);
+
+        } catch (err) {
+
+            console.log(err);
+            renderError(app, "An error occurred creating the board");
+
+        }
+
+    }],
+    ["client-side", (app, a) => async e => {
+
+        e.preventDefault();
+        history.replaceState(null, "", a.href);
+        renderMain(app);
+
+    }]
+
+];
+
+async function fetchBoardMetadata(app) {
+    const boardIds = Object.keys(model?.metadata?.entitlements?.boards || {});
+    model.boards = model.boards || {};
+    const boardMetadataCollectionRef = app.firestore().collection("board_metadata");
+    for (const id of boardIds.filter(bid => !(bid in model.boards))) {
+
+        const metadataSnapshot = await boardMetadataCollectionRef.doc(id).get();
+        model.boards[id] = { metadata: metadataSnapshot.data() };
+
     }
-    if (target.classList.contains("sign-out")) {
-        return async function signOut() {
-            await firebase.auth(app).signOut();
+}
+
+function handleAction(app, target) {
+    for (let [key, handler] of eventHandlers) {
+        if (target.classList.contains(key)) {
+            return handler(app, target);
         }
     }
 }
 
-function handleSubmit(app, target) {
-
-    if (target.classList.contains("testing"))
-        return async function (e) {
-            e.preventDefault();
-            const functions = app.functions();
-            const result = await functions.httpsCallable("fetchUserContext")({ "hello": "world" })
-            console.log("fetchUserContext says", result.data);
-
-            const firestore = app.firestore();
-            console.log(firestore);
-
-        };
-
-}
-
-const model = {};
+let model = {};
 
 const domParser = new DOMParser();
 
@@ -60,8 +99,31 @@ function renderNav(app) {
     registerListeners(rendered, app);
 }
 
-(async function initialize() {
+function renderMain(app) {
+    const url = new URL(location.href);
+    const board = url.searchParams.get("board");
+    model.main = {
+        board
+    };
+    const doc = domParser.parseFromString(main(model), "text/html");
+    const rendered = doc.body.querySelector("main");
+    document.querySelector("body > main").replaceWith(rendered);
+    registerListeners(rendered, app);
+}
 
+function renderError(app, message) {
+    const doc = domParser.parseFromString(errorToast(model, { message }), "text/html");
+    const rendered = doc.body.children[0];
+    document.body.appendChild(rendered);
+    setTimeout(() => rendered.remove(), 5000);
+}
+
+function render(app) {
+    renderNav(app);
+    renderMain(app);
+}
+
+(async function initialize() {
 
     try {
         let app = firebase.app();
@@ -85,17 +147,30 @@ function renderNav(app) {
         const container = document.body;
         registerListeners(container, app);
 
-        app.auth().onAuthStateChanged(user => {
+        app.auth().onAuthStateChanged(async user => {
             if (model.user === user) return;
-            model.user = user;
-            renderNav(app);
+            if (user) {
+                model.user = user;
+                const functions = app.functions();
+                const result = await functions.httpsCallable("fetchUserContext")();
+                model.metadata = result.data.metadata;
+                await fetchBoardMetadata(app);
 
+            } else {
+                model = { user };
+                const url = new URL(location.href);
+                if (url.search !== "") {
+                    url.search = "";
+                    location.href = url;
+                }
+            }
+            render(app);
         });
 
     } catch (e) {
 
         console.error(e);
-        document.body.innerHTML = 'Error loading the Firebase SDK, check the console.';
+        document.body.innerHTML = 'Error initialising the app, check the console.';
 
     }
 
@@ -104,9 +179,12 @@ function renderNav(app) {
 
 function registerListeners(container, app) {
     for (const button of container.querySelectorAll("button")) {
-        button.addEventListener("click", handleClick(app, button));
+        button.addEventListener("click", handleAction(app, button));
     }
     for (const form of container.querySelectorAll("form")) {
-        form.addEventListener("submit", handleSubmit(app, form));
+        form.addEventListener("submit", handleAction(app, form));
+    }
+    for (const a of container.querySelectorAll("a.client-side")) {
+        a.addEventListener("click", handleAction(app, a));
     }
 }

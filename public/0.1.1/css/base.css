@@ -10,8 +10,14 @@ html, body {
     margin: 0;
     font-size: var(--size-medium);
 }
-main {
+body {
+    display: flex;
+    flex-direction: column;
+
+}
+main:not(.editor) {
     padding: var(--size-large);
+    flex: 1;
 }
 nav {
     display: flex;
@@ -39,4 +45,11 @@ body > .loading {
 
     text-align: center;
     margin-top: 100px;
+}
+.error-toast {
+    margin: var(--size-medium);
+    padding: var(--size-medium);
+    background-color: #FEE;
+    position: absolute;
+    z-index: 1;
 }

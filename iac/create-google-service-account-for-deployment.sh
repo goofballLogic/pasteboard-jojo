@@ -9,3 +9,8 @@ gcloud projects add-iam-policy-binding \
     --member="serviceAccount:github-actions-deploy@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role=roles/editor \
     "${PROJECT_ID}"
+
+gcloud projects add-iam-policy-binding \
+    --member="serviceAccount:github-actions-deploy@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role=roles/cloudfunctions.admin \
+    "${PROJECT_ID}"

@@ -5,7 +5,24 @@ service cloud.firestore {
       allow create, read, update, delete
     }
     match /users/{userId} {
-      allow create, read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, read, update, delete: if
+        request.auth != null
+        &&
+        request.auth.uid == userId;
     }
+    function isBoardAccessible(boardId) {
+      return get(/databases/$(database)/documents/user-metadata/$(request.auth.uid))
+          .data
+          .entitlements
+          .boards[boardId]
+          .admin == true
+    }
+    match /boards/{boardId} {
+      allow read: if request.auth != null && isBoardAccessible(boardId)
+    }
+    match /board_metadata/{boardId} {
+      allow read: if request.auth != null && isBoardAccessible(boardId)
+    }
+
   }
 }

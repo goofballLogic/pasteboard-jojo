@@ -19,20 +19,20 @@ main:not(.editor) {
     padding: var(--size-large);
     flex: 1;
 }
-nav {
+body>nav {
     display: flex;
     gap: var(--size-small);
 }
-nav > * {
+body>nav > * {
     padding: var(--size-small);
 }
-nav a {
+body>nav a {
     color: black !important;
     text-decoration: none;
     width: calc(9*var(--size-small));
     text-align: center;
 }
-nav a:hover {
+body>nav a:hover {
     background-color: #00000022;
 }
 nav .status {

@@ -104,46 +104,18 @@ function board(model) {
     const data = model.boards[model.main.board];
     return `
 
-        <aside class="editor">
+        <nav class="editor">
 
             ${data.metadata.name}
             <hr />
             Zoom:<br />
             <button class="editor fit">Fit</button>
 
-        </aside>
+        </nav>
         <article class="editor">
 
             <div class="note">Something</div>
-            <div class="note">Something1</div>
-            <div class="note">Something2</div>
-            <div class="note">Something3</div>
-            <div class="note">Something4</div>
-            <div class="note">Something5</div>
-            <div class="note">Something6</div>
-            <div class="note">Something7</div>
-            <div class="note">Something8</div>
-            <div class="note">Something9</div>
-            <div class="note">Something</div>
-            <div class="note">Something1</div>
-            <div class="note">Something2</div>
-            <div class="note">Something3</div>
-            <div class="note">Something4</div>
-            <div class="note">Something5</div>
-            <div class="note">Something6</div>
-            <div class="note">Something7</div>
-            <div class="note">Something8</div>
-            <div class="note">Something9</div>
-            <div class="note">Something</div>
-            <div class="note">Something1</div>
-            <div class="note">Something2</div>
-            <div class="note">Something3</div>
-            <div class="note">Something4</div>
-            <div class="note">Something5</div>
-            <div class="note">Something6</div>
-            <div class="note">Something7</div>
-            <div class="note">Something8</div>
-            <div class="note">Something9</div>
+
 
         </article>
 

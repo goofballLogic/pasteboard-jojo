@@ -62,7 +62,7 @@ const eventHandlers = [
 
         e.preventDefault();
         history.replaceState(null, "", a.href);
-        renderMain(app);
+        render(app);
 
     }]
 

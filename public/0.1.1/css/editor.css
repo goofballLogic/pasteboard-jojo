@@ -33,13 +33,10 @@ article.editor {
 
     overflow: hidden;
     user-select: none;
-    /* background-size: 100px 100px;
-    background-image:
-        linear-gradient(to right, #DDD 1px, transparent 1px),
-        linear-gradient(to bottom, #DDD 1px, transparent 1px); */
+
 }
 div.note {
-    margin: var(--size-medium);
+    position: absolute;
     width: 200px;
     height: 100px;
     padding: var(--size-medium);

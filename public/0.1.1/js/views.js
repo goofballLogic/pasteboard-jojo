@@ -109,12 +109,14 @@ function board(model) {
             ${data.metadata.name}
             <hr />
             Zoom:<br />
-            <button class="editor fit">Fit</button>
+            <button class="editor fit">Fit &nwnear;</button>
+            <button class="editor fit-width">Fit &lrarr;</button>
+            <button class="editor fit-height">Fit &udarr;</button>
 
         </nav>
         <article class="editor">
 
-            <div class="note">Something</div>
+            <div class="note" style="left: 100px; top: 100px;">Something</div>
 
 
         </article>

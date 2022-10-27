@@ -38,7 +38,7 @@ export function nav({ user }) {
 export function main(model) {
 
     const mainContent = model.user?.email
-        ? model.main?.board
+        ? model.state?.board
             ? board(model)
             : boards(model)
         : "Please log in";
@@ -101,12 +101,13 @@ function boardLineItem([id, board]) {
 
 function board(model) {
 
-    const data = model.boards[model.main.board];
+    const { data } = model.board;
     return `
 
         <nav class="editor">
 
-            ${data.metadata.name}
+            ${data.name}<br />
+            <a href="?" class="home client-side"><button>&larr; Home</button></a>
             <hr />
             Zoom:<br />
             <button class="editor fit">Fit &nwnear;</button>
@@ -116,10 +117,20 @@ function board(model) {
         </nav>
         <article class="editor">
 
-            <div class="note" style="left: 100px; top: 100px;">Something</div>
-
+            ${data.notes ? Object.values(data.notes).map(note).join("") : ""}
 
         </article>
+
+    `;
+
+}
+
+function note(noteModel) {
+
+    const { id, left, top, content } = noteModel;
+    return `
+
+        <div data-id="${id}" class="note" style="left: ${left}px; top: ${top}px;">${content?.text || "???"}</div>
 
     `;
 

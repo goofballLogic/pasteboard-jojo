@@ -18,7 +18,7 @@ service cloud.firestore {
           .admin == true
     }
     match /boards/{boardId} {
-      allow read: if request.auth != null && isBoardAccessible(boardId)
+      allow read, update: if request.auth != null && isBoardAccessible(boardId)
     }
     match /board_metadata/{boardId} {
       allow read: if request.auth != null && isBoardAccessible(boardId)

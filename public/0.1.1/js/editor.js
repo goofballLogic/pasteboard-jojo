@@ -1,3 +1,5 @@
+import { noteAdded, noteModified, send } from "./bus.js";
+
 const body = document.querySelector("body");
 const bodyObserver = new MutationObserver((mutationList) => {
     for (const mutation of mutationList.filter(l => l.type === "childList")) {
@@ -12,15 +14,26 @@ const bodyObserver = new MutationObserver((mutationList) => {
 
 });
 bodyObserver.observe(body, { childList: true });
+const parser = new DOMParser();
+export function updateEditor(main, updated) {
+
+    const updatedContent = parser
+        .parseFromString(updated, "text/html")
+        .querySelector("article.editor");
+    const editorContent = main.querySelector("article.editor");
+    if (editorContent.innerHTML !== updatedContent.innerHTML) {
+        editorContent.innerHTML = updatedContent.innerHTML;
+        intiailiseEditorSurfaceContent(editorContent);
+    }
+
+}
 
 function initialiseEditor(main) {
 
     const editorSurface = main.querySelector("article.editor");
     makeDraggable(editorSurface);
+    intiailiseEditorSurfaceContent(editorSurface);
 
-    for (const note of editorSurface.querySelectorAll(".note")) {
-        makeDraggable(note);
-    }
     const menuSurface = main.querySelector("nav.editor");
     menuSurface.querySelector("button.fit")?.addEventListener("click", e =>
         zoomToFit(editorSurface, window.innerWidth - 20, window.innerHeight - 20));
@@ -30,6 +43,45 @@ function initialiseEditor(main) {
         zoomToFit(editorSurface, Number.POSITIVE_INFINITY, window.innerHeight - 20));
 
     zoomToFit(editorSurface, window.innerWidth - 20, window.innerHeight - 20);
+    editorSurface.addEventListener("dblclick", e => {
+
+        const content = prompt("Content");
+        if (!content) return;
+        const note = document.createElement("DIV");
+        note.className = "note";
+        note.textContent = content;
+        note.style.visibility = "hidden";
+        editorSurface.appendChild(note);
+
+        const rect = editorSurface.getBoundingClientRect();
+        const zoom = rect.width / editorSurface.offsetWidth;
+        const left = snapX((e.clientX - rect.left - (note.offsetWidth / 2)) / zoom);
+        const top = snapY((e.clientY - rect.top - (note.offsetHeight / 2)) / zoom);
+        note.style.left = `${left}px`;
+        note.style.top = `${top}px`;
+
+        send(noteAdded, {
+            top: note.offsetTop,
+            left: note.offsetLeft,
+            content: { text: content }
+        });
+
+    });
+}
+
+let snapXsize = 10;
+let snapYsize = 10;
+function intiailiseEditorSurfaceContent(editorSurface) {
+    for (const note of editorSurface.querySelectorAll(".note")) {
+        makeDraggable(note);
+    }
+}
+
+function snapX(coord) {
+    return Math.round(coord / snapXsize) * snapXsize;
+}
+function snapY(coord) {
+    return Math.round(coord / snapYsize) * snapYsize;
 }
 
 function makeDraggable(draggable) {
@@ -37,18 +89,6 @@ function makeDraggable(draggable) {
     const state = {
         moving: false
     };
-    draggable.addEventListener("click", e => {
-
-        const boundingRect = draggable.getBoundingClientRect();
-        const zoom = boundingRect.width / draggable.offsetWidth;
-        console.log(draggable.tagName);
-        console.log("offset left", draggable.offsetLeft);
-        console.log("mouse client x", e.clientX);
-        console.log("zoom", zoom);
-        console.log("zoomed offset left", draggable.offsetLeft * zoom);
-        console.log(draggable.offsetParent);
-
-    })
     draggable.addEventListener("mousedown", e => {
         if (e.target === draggable) {
             const boundingRect = draggable.getBoundingClientRect();
@@ -66,20 +106,38 @@ function makeDraggable(draggable) {
                 zoom
             };
         }
+        document.body.addEventListener("mousemove", handleMouseMove);
+        document.body.addEventListener("mouseup", handleMouseUp);
     });
-    document.body.addEventListener("mousemove", e => {
 
+    function handleMouseMove(e) {
         const { moving } = state;
         if (moving) {
             const dx = e.clientX - moving.mouseStart.clientX;
             const dy = e.clientY - moving.mouseStart.clientY;
-            const x = (moving.elementStart.offsetLeft * moving.zoom + dx) / moving.zoom;
-            const y = (moving.elementStart.offsetTop * moving.zoom + dy) / moving.zoom;
+            const x = snapX((moving.elementStart.offsetLeft * moving.zoom + dx) / moving.zoom);
+            const y = snapY((moving.elementStart.offsetTop * moving.zoom + dy) / moving.zoom);
             draggable.style.left = `${x}px`;
             draggable.style.top = `${y}px`;
         }
-    });
-    draggable.addEventListener("mouseup", e => { state.moving = false; });
+    }
+
+    function handleMouseUp() {
+        if (state.moving) {
+            document.body.removeEventListener("mouseup", handleMouseUp);
+            document.body.removeEventListener("mousemove", handleMouseMove);
+            if (draggable.classList.contains("note")) {
+                send(noteModified, {
+                    id: draggable.dataset.id,
+                    top: draggable.offsetTop,
+                    left: draggable.offsetLeft,
+                    content: { text: draggable.textContent }
+                });
+            }
+            state.moving = false;
+        }
+    }
+
 }
 
 function zoomToFit(editorSurface, width, height) {

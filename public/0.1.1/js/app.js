@@ -4,7 +4,10 @@ import "/__/firebase/9.12.0/firebase-functions-compat.js";
 import "/__/firebase/9.12.0/firebase-firestore-compat.js";
 import "/__/firebase/init.js?useEmulator=true&region=europe-west2";
 import { nav, main, errorToast } from "./views.js"
-import "./editor.js";
+import { updateEditor } from "./editor.js";
+import id from "./id.js";
+import { noteAdded, noteModified, receive } from "./bus.js";
+import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore } from "./board.js";
 
 async function googleSignIn(app) {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -45,7 +48,6 @@ const eventHandlers = [
         try {
 
             const createBoard = await functions.httpsCallable("createBoard")(board);
-            console.log("createBoard says", createBoard);
             model.metadata.entitlements = createBoard.data.entitlements;
             await fetchBoardMetadata(app);
             renderMain(app);
@@ -99,12 +101,27 @@ function renderNav(app) {
     registerListeners(rendered, app);
 }
 
-function renderMain(app) {
+async function renderMain(app) {
+    model.error = null;
     const url = new URL(location.href);
-    const board = url.searchParams.get("board");
-    model.main = {
-        board
+    model.state = {
+        board: url.searchParams.get("board")
     };
+    if (model.state.board) {
+        const boardData = model.boards && model.boards[model.state.board];
+        model.board = boardData || {};
+        if (!model.board.data) {
+            try {
+                const boardId = model.state.board;
+                const board = model.board;
+                await loadFromStore(app, board, boardId);
+            } catch (err) {
+                renderError(app, err.message);
+                model.error = err;
+            }
+        }
+    }
+    console.log(model);
     const doc = domParser.parseFromString(main(model), "text/html");
     const rendered = doc.body.querySelector("main");
     document.querySelector("body > main").replaceWith(rendered);
@@ -144,13 +161,17 @@ function render(app) {
             main(model)
         ].join("");
         document.body.innerHTML = body;
+
+        receive(noteModified, noteModifiedHandler(app));
+        receive(noteAdded, noteAddedHandler(app));
+
         const container = document.body;
         registerListeners(container, app);
 
         app.auth().onAuthStateChanged(async user => {
             if (model.user === user) return;
             if (user) {
-                model.user = user;
+                model = { user };
                 const functions = app.functions();
                 const result = await functions.httpsCallable("fetchUserContext")();
                 model.metadata = result.data.metadata;
@@ -186,5 +207,32 @@ function registerListeners(container, app) {
     }
     for (const a of container.querySelectorAll("a.client-side")) {
         a.addEventListener("click", handleAction(app, a));
+    }
+}
+
+function noteAddedHandler(app) {
+    return async eventData => {
+        try {
+            addNote(model.board, eventData);
+            aggregateEvents(model.board);
+            await saveToStore(app, model.board);
+            updateEditor(document.querySelector("main"), main(model));
+        } catch (err) {
+            renderError(app, err.message);
+        }
+
+    };
+}
+
+function noteModifiedHandler(app) {
+    return async eventData => {
+        try {
+            modifyNote(model.board, eventData);
+            aggregateEvents(model.board);
+            await saveToStore(app, model.board);
+            updateEditor(document.querySelector("main"), main(model));
+        } catch (err) {
+            renderError(app, err.message);
+        }
     }
 }

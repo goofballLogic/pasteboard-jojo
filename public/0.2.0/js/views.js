@@ -1,10 +1,15 @@
 
-function buildRoot() {
-    const url = new URL(import.meta.url);
-    url.pathname = url.pathname.replace(/\/js\/views.js$/, "");
-    return url.toString();
-}
-const root = buildRoot()
+// function buildRoot() {
+//     const url = new URL(import.meta.url);
+//     url.pathname = url.pathname.replace(/\/js\/views.js$/, "");
+//     return url.toString();
+// }
+// const root = buildRoot()
+
+const routes = {
+    home: "?",
+    display: "?mode=displays"
+};
 
 function signIn() {
 
@@ -28,7 +33,8 @@ export function nav({ user }) {
 
     return `
         <nav>
-            <a href="${root}/app/home.html">Home</a>
+            <a class="client-side" href="${routes.home}">Home</a>
+            <a class="client-side" href="${routes.display}">Displays</a>
             <div class="status">${user?.email ? acknowledgeUser(user) : signIn()}</div>
         </nav>
     `;
@@ -38,9 +44,7 @@ export function nav({ user }) {
 export function main(model) {
 
     const mainContent = model.user?.email
-        ? model.state?.board
-            ? board(model)
-            : boards(model)
+        ? asdf(model)
         : "Please log in";
 
     return `<main>
@@ -49,6 +53,13 @@ export function main(model) {
 
     </main>`;
 
+}
+
+function asdf(model) {
+    console.log(model);
+    return model.state?.board
+        ? board(model)
+        : boards(model);
 }
 
 export function errorToast(_, errorModel) {
@@ -84,6 +95,10 @@ function boards(model) {
             ${Object.entries(model.boards).map(boardLineItem).join("")}
 
         </ul>`}
+
+        <p>You can manage your displays to display a board here:
+        <a class="client-side" href="${routes.display}">Displays</a>
+        </p>
 
     </article>`;
 

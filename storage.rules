@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /displays/{provider}/{display} {
+      allow write: if true;
+      allow read: if request.auth != null;
+    }
+  }
+}

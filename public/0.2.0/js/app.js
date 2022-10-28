@@ -2,10 +2,9 @@ import "/__/firebase/9.12.0/firebase-app-compat.js";
 import "/__/firebase/9.12.0/firebase-auth-compat.js";
 import "/__/firebase/9.12.0/firebase-functions-compat.js";
 import "/__/firebase/9.12.0/firebase-firestore-compat.js";
-import "/__/firebase/init.js?useEmulator=true&region=europe-west2";
+import "/__/firebase/init.js?useEmulator=true";
 import { nav, main, errorToast } from "./views.js"
 import { updateEditor } from "./editor.js";
-import id from "./id.js";
 import { noteAdded, noteModified, receive } from "./bus.js";
 import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore } from "./board.js";
 
@@ -90,7 +89,7 @@ function handleAction(app, target) {
     }
 }
 
-let model = {};
+let model = { loading: true };
 
 const domParser = new DOMParser();
 
@@ -103,10 +102,15 @@ function renderNav(app) {
 
 async function renderMain(app) {
     model.error = null;
-    const url = new URL(location.href);
-    model.state = {
-        board: url.searchParams.get("board")
-    };
+    buildState();
+    await buildMainModel(app);
+    const doc = domParser.parseFromString(main(model), "text/html");
+    const rendered = doc.body.querySelector("main");
+    document.querySelector("body > main").replaceWith(rendered);
+    registerListeners(rendered, app);
+}
+
+async function buildMainModel(app) {
     if (model.state.board) {
         const boardData = model.boards && model.boards[model.state.board];
         model.board = boardData || {};
@@ -121,11 +125,21 @@ async function renderMain(app) {
             }
         }
     }
-    console.log(model);
-    const doc = domParser.parseFromString(main(model), "text/html");
-    const rendered = doc.body.querySelector("main");
-    document.querySelector("body > main").replaceWith(rendered);
-    registerListeners(rendered, app);
+    if (model.state.mode === "displays") {
+
+        console.log("displays");
+
+    }
+
+}
+
+function buildState() {
+    const url = new URL(location.href);
+    model.state = {};
+    if (url.searchParams.has("board"))
+        model.state.board = url.searchParams.get("board");
+    if (url.searchParams.has("mode"))
+        model.state.mode = url.searchParams.get("mode");
 }
 
 function renderError(app, message) {
@@ -143,7 +157,7 @@ function render(app) {
 (async function initialize() {
 
     try {
-        let app = firebase.app();
+        const app = firebase.app();
         model.features = [
             'auth',
             'database',
@@ -169,6 +183,7 @@ function render(app) {
         registerListeners(container, app);
 
         app.auth().onAuthStateChanged(async user => {
+
             if (model.user === user) return;
             if (user) {
                 model = { user };

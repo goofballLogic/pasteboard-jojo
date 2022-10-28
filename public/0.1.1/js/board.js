@@ -1,5 +1,5 @@
-import { updateEditor } from "./editor.js";
 import id from "./id.js";
+import { keywiseUpdate } from "./patching.js";
 import merge from "./merge.js";
 
 function processEvent(eventData, note, mergeData) {
@@ -19,11 +19,11 @@ function processEvent(eventData, note, mergeData) {
     }
 }
 
-function processNoteEvent(board, boardEventName, eventData, note) {
+function processNoteEvent(board, boardEventName, noteId, eventData, note) {
     const mergeData = {};
     processEvent(eventData, note, mergeData);
     board.events = board.events || [];
-    board.events.push({ id: note.id, [boardEventName]: mergeData });
+    board.events.push({ id: noteId, [boardEventName]: mergeData });
 }
 
 export async function loadFromStore(app, board, boardId) {
@@ -33,87 +33,53 @@ export async function loadFromStore(app, board, boardId) {
 }
 
 export async function saveToStore(app, board) {
+
+    if (!(board.events?.length)) return;
     const notes = {};
     const patch = { notes };
-    for (const evt of board.events) {
+    while (board.events.length) {
+        const evt = board.events.shift();
         add(evt["add-note"], evt);
         add(evt["merge-note"], evt);
-    };
-    console.log(patch);
+    }
     await keywiseUpdate(board.ref, patch);
 
     function add(data, evt) {
         if (data) {
             if (!(evt.id in notes))
-                notes[evt.id] = { id: evt.id };
+                notes[evt.id] = {};
             merge(notes[evt.id], data);
         }
     }
 }
 
-const x = {
-    "hello": "world",
-    "goodbye": {
-        "heaven": 42,
-        "or": {
-            "hegel": "thanks"
-        }
-    }
-};
-
-console.log(Object.fromEntries(asKeys(x)));
-
-function asKeys(obj) {
-    return Object.entries(obj).reduce((agg, [key, val]) => {
-        if (Array.isArray(val))
-            throw new Error("Array");
-        if (val && typeof val === "object") {
-            return [
-                ...agg,
-                ...asKeys(val).map(([innerKey, innerVal]) => [`${key}.${innerKey}`, innerVal])
-            ];
-        }
-        return [
-            ...agg,
-            [key, val]
-        ];
-    }, []);
-}
-
-async function keywiseUpdate(ref, patch) {
-
-    const keywisePatch = Object.fromEntries(asKeys(patch));
-    console.log(keywisePatch);
-    await ref.update(keywisePatch);
-
-}
-
 export function modifyNote(board, eventData) {
-    if (!board?.data) {
-        throw new Error("Failed to updated modified note (BMN-NBD)");
-    }
-    const notes = board.data.notes = board.data.notes || {};
-    const id = eventData.id;
-    if (!notes) {
-        throw new Error(`Failed to update modified note (BMN-NNN:${id})`);
-    } else {
-        const note = notes[id];
-        if (!note) {
-            throw new Error(`Failed to update modified note (BMN-NN:${id})`);
-        }
-        processNoteEvent(board, "merge-note", eventData, note);
+    try {
+        const noteId = eventData.id;
+        if (!noteId)
+            throw new Error("NID");
+        if (!board?.data)
+            throw new Error("NBD");
+        const notes = board.data.notes = board.data.notes || {};
+        if (!notes)
+            throw new Error(`NNN:${noteId})`);
+        const note = notes[noteId];
+        if (!note)
+            throw new Error(`NN:${noteId})`);
+        processNoteEvent(board, "merge-note", noteId, eventData, note);
+    } catch (err) {
+        throw new Error(`Failed to update modified note (BMN-${err.message})`);
     }
 }
 
 export function addNote(board, eventData) {
-    if (!(board?.data)) {
+    if (!(board?.data))
         throw new Error("Failed to add note (BAN-NBD");
-    } else {
-        const notes = board.data.notes = board.data.notes || {};
-        const note = { id: id("note") };
-        notes[note.id] = note;
-        processNoteEvent(board, "add-note", eventData, note);
-    }
+    const notes = board.data.notes = board.data.notes || {};
+    const noteId = id("note");
+    const note = {};
+    notes[noteId] = note;
+    processNoteEvent(board, "add-note", noteId, eventData, note);
 }
 
 export function aggregateEvents(board) {

@@ -117,7 +117,7 @@ function board(model) {
         </nav>
         <article class="editor">
 
-            ${data.notes ? Object.values(data.notes).map(note).join("") : ""}
+            ${data.notes ? Object.entries(data.notes).map(note).join("") : ""}
 
         </article>
 
@@ -125,9 +125,9 @@ function board(model) {
 
 }
 
-function note(noteModel) {
+function note([id, noteModel]) {
 
-    const { id, left, top, content } = noteModel;
+    const { left, top, content } = noteModel;
     return `
 
         <div data-id="${id}" class="note" style="left: ${left}px; top: ${top}px;">${content?.text || "???"}</div>

@@ -91,26 +91,16 @@ function display(displayModel) {
     const [provider, identifier] = state.split(".");
     const [connected] = decode(sessionId, "?")?.split("_");
 
-    const age = Math.ceil((new Date() - new Date(updated)) / 1000);
-    const days = Math.floor(age / DAY);
-    const daySeconds = days * DAY;
-    const hours = Math.floor((age - daySeconds) / HOUR);
-    const hourSeconds = hours * HOUR;
-    const minutes = Math.floor((age - daySeconds - hourSeconds) / MINUTE);
-    const minuteSeconds = minutes * MINUTE;
-    const seconds = age - daySeconds - hourSeconds - minuteSeconds;
-    const ageDescription = days ? `${days} days ${hours} hours and ${minutes} minutes`
-        : hours ? `${hours} hours and ${minutes} minutes`
-            : minutes ? `${minutes} minutes`
-                : `~${seconds} seconds`;
+    const updatedAgo = ago(updated);
+    const connectedAgo = ago(connected);
 
-    return `<li class="${age <= MINUTE * 2 ? "healthy" : age <= MINUTE * 4 ? "weak" : "dead"}">
+    return `<li class="${updatedAgo.age <= MINUTE * 2 ? "healthy" : updatedAgo.age <= MINUTE * 4 ? "weak" : "dead"}">
 
         <div class="title">Unrecognised (${identifier})</div>
         <details>
             <summary>Data</summary>
-            <dt>Last ping</dt><dd>${ageDescription} ago</dd>
-            <dt>Connected</td><dd>${connected}</dd>
+            <dt>Last ping</dt><dd>${updatedAgo.description} ago</dd>
+            <dt>Connected</td><dd>${connectedAgo.description} ago</dd>
             <dt>IP</dt><dd>${ip}</dd>
             <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
             <dt>Session</dt><dd>${sessionId}</dd>
@@ -118,6 +108,22 @@ function display(displayModel) {
 
     </li>`;
 
+}
+
+function ago(start) {
+    const age = Math.ceil(Math.max(0, (new Date() - new Date(start))) / 1000);
+    const days = Math.floor(age / DAY);
+    const daySeconds = days * DAY;
+    const hours = Math.floor((age - daySeconds) / HOUR);
+    const hourSeconds = hours * HOUR;
+    const minutes = Math.floor((age - daySeconds - hourSeconds) / MINUTE);
+    const minuteSeconds = minutes * MINUTE;
+    const seconds = age - daySeconds - hourSeconds - minuteSeconds;
+    const description = days ? `${days} days ${hours} hours and ${minutes} minutes`
+        : hours ? `${hours} hours and ${minutes} minutes`
+            : minutes ? `${minutes} minutes`
+                : `~${seconds} seconds`;
+    return { age, description };
 }
 
 export function errorToast(_, errorModel) {

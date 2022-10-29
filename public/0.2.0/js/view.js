@@ -7,14 +7,36 @@ const storage = app.storage();
 const state = location.search.substring(1).split(".");
 const storageRef = storage.ref(["displays", ...state].join("/"));
 
-const sessionId = `${new Date().toISOString()}.${Math.random() * Date.now()}`;
+const sessionId = `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`;
 
-console.log(storage);
-console.log(storageRef);
-
+let data = null;
 async function ping() {
 
-    await storageRef.putString(`${sessionId}|${Date.now()}`);
+    if (!data) {
+
+        try {
+
+            const resp = await fetch("https://ipapi.co/json");
+            if (resp.ok) {
+                const { ip, city, region, country_name } = await resp.json();
+                data = { ip, city, region, country: country_name };
+            }
+
+        } catch (_) {
+
+            data = null;
+
+        }
+
+    }
+    const metadata = {
+        customMetadata: {
+            ...data,
+            state: state.join("."),
+            sessionId: btoa(sessionId)
+        }
+    };
+    await storageRef.putString("", "raw", metadata);
 
 };
 

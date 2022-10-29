@@ -1,11 +1,3 @@
-
-// function buildRoot() {
-//     const url = new URL(import.meta.url);
-//     url.pathname = url.pathname.replace(/\/js\/views.js$/, "");
-//     return url.toString();
-// }
-// const root = buildRoot()
-
 const routes = {
     home: "?",
     display: "?mode=displays"
@@ -44,7 +36,7 @@ export function nav({ user }) {
 export function main(model) {
 
     const mainContent = model.user?.email
-        ? asdf(model)
+        ? mainLoggedIn(model)
         : "Please log in";
 
     return `<main>
@@ -55,11 +47,77 @@ export function main(model) {
 
 }
 
-function asdf(model) {
-    console.log(model);
-    return model.state?.board
-        ? board(model)
-        : boards(model);
+function mainLoggedIn(model) {
+
+    if (model.state?.mode === "displays") {
+        return model.displays
+            ? displays(model)
+            : "No displays found";
+    } else {
+        return model.state.board
+            ? board(model)
+            : boards(model);
+    }
+}
+
+function displays(model) {
+
+    return `<ul class="displays">
+
+        ${model.displays.length
+            ? model.displays.map(display).join("")
+            : "No displays registered"}
+    </ul>`;
+
+}
+
+function decode(data, fallback) {
+    try {
+        return atob(data);
+    } catch (err) {
+        console.warn(err);
+    }
+    return fallback;
+}
+
+const MINUTE = 60;
+const HOUR = MINUTE * 60;
+const DAY = HOUR * 24;
+
+function display(displayModel) {
+
+    const { customMetadata, updated } = displayModel;
+    const { ip, city, region, country, state, sessionId } = customMetadata;
+    const [provider, identifier] = state.split(".");
+    const [connected] = decode(sessionId, "?")?.split("_");
+
+    const age = Math.ceil((new Date() - new Date(updated)) / 1000);
+    const days = Math.floor(age / DAY);
+    const daySeconds = days * DAY;
+    const hours = Math.floor((age - daySeconds) / HOUR);
+    const hourSeconds = hours * HOUR;
+    const minutes = Math.floor((age - daySeconds - hourSeconds) / MINUTE);
+    const minuteSeconds = minutes * MINUTE;
+    const seconds = age - daySeconds - hourSeconds - minuteSeconds;
+    const ageDescription = days ? `${days} days ${hours} hours and ${minutes} minutes`
+        : hours ? `${hours} hours and ${minutes} minutes`
+            : minutes ? `${minutes} minutes`
+                : `~${seconds} seconds`;
+
+    return `<li class="${age <= MINUTE * 2 ? "healthy" : age <= MINUTE * 4 ? "weak" : "dead"}">
+
+        <div class="title">Unrecognised (${identifier})</div>
+        <details>
+            <summary>Data</summary>
+            <dt>Last ping</dt><dd>${ageDescription} ago</dd>
+            <dt>Connected</td><dd>${connected}</dd>
+            <dt>IP</dt><dd>${ip}</dd>
+            <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
+            <dt>Session</dt><dd>${sessionId}</dd>
+        </details>
+
+    </li>`;
+
 }
 
 export function errorToast(_, errorModel) {

@@ -1,0 +1,39 @@
+ul.displays {
+    padding: 0;
+}
+
+ul.displays li {
+    list-style: none;
+    box-shadow: 0 0 2px black;
+    margin: var(--size-small);
+    padding: var(--size-medium);
+    display: flex;
+    gap: var(--size-medium);
+    align-items: center;
+    background: linear-gradient(to bottom right, #CCC, #EEE);
+}
+
+ul.displays li::before {
+    content: " ";
+    display: block;
+    width: var(--size-medium);
+    height: var(--size-medium);
+    border-radius: var(--size-medium);
+    background: silver;
+
+}
+
+ul.displays li.healthy::before {
+    background: radial-gradient(greenyellow 20%, green);
+    box-shadow: 0 0 10px 0 green;
+}
+
+ul.displays li.weak::before {
+    background: radial-gradient(orange 20%, brown);
+    box-shadow: 0 0 10px 0 brown;
+}
+
+ul.displays li.dead::before {
+    background: radial-gradient(#F00 30%, #900);
+    box-shadow: 0 0 10px 0px red;
+}

@@ -2,11 +2,14 @@ import "/__/firebase/9.12.0/firebase-app-compat.js";
 import "/__/firebase/9.12.0/firebase-auth-compat.js";
 import "/__/firebase/9.12.0/firebase-functions-compat.js";
 import "/__/firebase/9.12.0/firebase-firestore-compat.js";
+import "/__/firebase/9.12.0/firebase-storage-compat.js";
+import "/__/firebase/9.12.0/firebase-storage.js";
 import "/__/firebase/init.js?useEmulator=true";
 import { nav, main, errorToast } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteModified, receive } from "./bus.js";
 import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore } from "./board.js";
+import { listDisplays } from "./displays.js";
 
 async function googleSignIn(app) {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -62,7 +65,7 @@ const eventHandlers = [
     ["client-side", (app, a) => async e => {
 
         e.preventDefault();
-        history.replaceState(null, "", a.href);
+        history.pushState(null, "", a.href);
         render(app);
 
     }]
@@ -127,7 +130,7 @@ async function buildMainModel(app) {
     }
     if (model.state.mode === "displays") {
 
-        console.log("displays");
+        model.displays = await listDisplays(app, model);
 
     }
 
@@ -178,7 +181,7 @@ function render(app) {
 
         receive(noteModified, noteModifiedHandler(app));
         receive(noteAdded, noteAddedHandler(app));
-
+        window.addEventListener("popstate", () => render(app));
         const container = document.body;
         registerListeners(container, app);
 
@@ -251,3 +254,4 @@ function noteModifiedHandler(app) {
         }
     }
 }
+

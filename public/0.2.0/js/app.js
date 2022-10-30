@@ -75,18 +75,6 @@ const eventHandlers = [
         const { previous, next, state } = Object.fromEntries(new FormData(form).entries());
         console.log({ previous, next, state });
         model.boards = model.boards || {};
-        if (previous) {
-
-            if (!(previous in model.boards))
-                model.boards[previous] = {};
-            const board = model.boards[previous];
-            if (!await getBoardData(board, app, previous))
-                return; // an error occurred
-            disableDisplay(board, state);
-            aggregateEvents(board);
-            await saveToStore(app, board);
-
-        }
         if (next) {
 
             if (!(next in model.boards))
@@ -94,6 +82,9 @@ const eventHandlers = [
             const board = model.boards[next];
             if (!await getBoardData(board, app, next))
                 return; // an error occurred
+            disableDisplay(board, state);
+            aggregateEvents(board);
+            await saveToStore(app, board);
             enableDisplay(board, state);
             aggregateEvents(board);
             await saveToStore(app, board);

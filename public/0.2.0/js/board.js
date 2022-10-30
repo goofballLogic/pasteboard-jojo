@@ -45,7 +45,7 @@ export async function saveToStore(app, board) {
             displays[evt.id] = { show: true };
         }
         if ("disable-display" in evt) {
-            displays[evt.id] = null;
+            displays[evt.id] = undefined;
         }
     }
     await keywiseUpdate(board.ref, patch);

@@ -1,6 +1,5 @@
 function asKeys(obj) {
     return Object.entries(obj).reduce((agg, [key, val]) => {
-        console.log(key, val);
         if (Array.isArray(val))
             throw new Error("Array");
         if (val && typeof val === "object") {
@@ -8,6 +7,12 @@ function asKeys(obj) {
                 ...agg,
                 ...asKeys(val).map(([innerKey, innerVal]) => [`${key}.${innerKey}`, innerVal])
             ];
+        }
+        if (val === undefined) {
+            return [
+                ...agg,
+                [key, firebase.firestore.FieldValue.delete()]
+            ]
         }
         return [
             ...agg,
@@ -19,7 +24,7 @@ function asKeys(obj) {
 export async function keywiseUpdate(ref, patch) {
 
     const keywisePatch = Object.fromEntries(asKeys(patch));
-    console.log(ref, keywisePatch);
+    console.log("KWP", keywisePatch);
     await ref.update(keywisePatch);
 
 }

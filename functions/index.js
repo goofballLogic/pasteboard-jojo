@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { getStorage } = require("firebase-admin/storage");
+const { getFirestore, FieldValue, FieldPath } = require("firebase-admin/firestore");
 
 const app = admin.initializeApp();
 
@@ -8,15 +9,30 @@ exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").on
     const beforeDisplays = Object.keys(change.before.data().displays || {});
     const afterDisplays = Object.keys(change.after.data().displays || {});
     const { boardId } = context.params;
-    const bucket = getStorage(app).bucket();
     const payload = JSON.stringify(change.after.data());
+    const bucket = getStorage(app).bucket();
+
+    console.log("Board changed", boardId, change.before.data(), change.after.data());
     for (const displayId of afterDisplays) {
+
         if (!beforeDisplays.includes(displayId)) {
+
+            console.log(`Adding ${displayId} to board`);
+            await removeDisplayFromBoards(displayId, boardId);
             const dataFile = bucket.file(`config/${displayId.replace("_", "/")}`);
             await dataFile.save(payload);
             await dataFile.setMetadata({ metadata: { boardId } });
+
         }
+
     }
+
+});
+
+exports.test = functions.https.onCall(async () => {
+
+    const displayId = "bYnRbsVC6WQd2Avwfjd6cS9TM1L2_EX3xsA8KajOF3OV2AWwu";
+    await removeDisplayFromBoards(displayId);
 
 });
 
@@ -68,6 +84,20 @@ exports.createBoard = functions.https.onCall(async (payloadData, context) => {
 
     return await fetchUserMetadata(uid);
 });
+
+async function removeDisplayFromBoards(displayId, excludedBoardId) {
+    let query = getFirestore(app)
+        .collection("boards")
+        .where(`displays.${displayId}`, "!=", null);
+    const boards = await query.get();
+    const docs = boards.docs.filter(d => d.id !== excludedBoardId);
+    if (docs.length) {
+        console.log("Removing display", displayId, "from", docs.length, "boards: ", docs.map(d => d.id).join(", "));
+        await Promise.all(docs.map(board => board.ref.update({
+            [`displays.${displayId}`]: FieldValue.delete()
+        })));
+    }
+}
 
 function parseBoardModel(data) {
     return { id: data?.id, name: data?.name };

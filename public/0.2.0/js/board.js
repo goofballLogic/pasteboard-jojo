@@ -2,28 +2,26 @@ import id from "./id.js";
 import { keywiseUpdate } from "./patching.js";
 import merge from "./merge.js";
 
-function processEvent(eventData, note, mergeData) {
-    if ("left" in eventData && note.left !== eventData.left) {
-        mergeData.left = eventData.left;
-        note.left = mergeData.left;
-    }
-    if ("top" in eventData && eventData.top !== note.top) {
-        mergeData.top = eventData.top;
-        note.top = mergeData.top;
-    }
-    if ("content" in eventData && eventData.content.text !== note.content?.text) {
-        mergeData.content = mergeData.content || {};
-        mergeData.content.text = eventData.content.text;
-        note.content = note.content || {};
-        note.content.text = eventData.content.text;
-    }
-}
-
-function processNoteEvent(board, boardEventName, noteId, eventData, note) {
+function processComponentEvent(board, boardEventName, id, eventData, component) {
     const mergeData = {};
-    processEvent(eventData, note, mergeData);
+    if (eventData) {
+        if ("left" in eventData && component.left !== eventData.left) {
+            mergeData.left = eventData.left;
+            component.left = mergeData.left;
+        }
+        if ("top" in eventData && eventData.top !== component.top) {
+            mergeData.top = eventData.top;
+            component.top = mergeData.top;
+        }
+        if ("content" in eventData && eventData.content.text !== component.content?.text) {
+            mergeData.content = mergeData.content || {};
+            mergeData.content.text = eventData.content.text;
+            component.content = component.content || {};
+            component.content.text = eventData.content.text;
+        }
+    }
     board.events = board.events || [];
-    board.events.push({ id: noteId, [boardEventName]: mergeData });
+    board.events.push({ id, [boardEventName]: mergeData });
 }
 
 export async function loadFromStore(app, board, boardId) {
@@ -36,15 +34,23 @@ export async function saveToStore(app, board) {
 
     if (!(board.events?.length)) return;
     const notes = {};
-    const patch = { notes };
+    const displays = {};
+    const patch = { notes, displays };
+
     while (board.events.length) {
         const evt = board.events.shift();
-        add(evt["add-note"], evt);
-        add(evt["merge-note"], evt);
+        addNoteEventToPatch(evt["add-note"], evt);
+        addNoteEventToPatch(evt["merge-note"], evt);
+        if ("enable-display" in evt) {
+            displays[evt.id] = { show: true };
+        }
+        if ("disable-display" in evt) {
+            displays[evt.id] = null;
+        }
     }
     await keywiseUpdate(board.ref, patch);
 
-    function add(data, evt) {
+    function addNoteEventToPatch(data, evt) {
         if (data) {
             if (!(evt.id in notes))
                 notes[evt.id] = {};
@@ -66,20 +72,35 @@ export function modifyNote(board, eventData) {
         const note = notes[noteId];
         if (!note)
             throw new Error(`NN:${noteId})`);
-        processNoteEvent(board, "merge-note", noteId, eventData, note);
+        processComponentEvent(board, "merge-note", noteId, eventData, note);
     } catch (err) {
         throw new Error(`Failed to update modified note (BMN-${err.message})`);
     }
 }
 
+export function disableDisplay(board, displayId) {
+    if (board?.data && board.data.displays && displayId in board.data.displays) {
+        delete board.data.displays[displayId];
+    }
+    processComponentEvent(board, "disable-display", displayId);
+}
+
+export function enableDisplay(board, displayId) {
+    if (!(board?.data))
+        throw new Error("Failed to enable display (BED-NBD)");
+    const displays = board.data.displays = board.data.displays || {};
+    displays[displayId] = { scheduled: Date.now() };
+    processComponentEvent(board, "enable-display", displayId);
+}
+
 export function addNote(board, eventData) {
     if (!(board?.data))
-        throw new Error("Failed to add note (BAN-NBD");
+        throw new Error("Failed to add note (BAN-NBD)");
     const notes = board.data.notes = board.data.notes || {};
     const noteId = id("note");
     const note = {};
     notes[noteId] = note;
-    processNoteEvent(board, "add-note", noteId, eventData, note);
+    processComponentEvent(board, "add-note", noteId, eventData, note);
 }
 
 export function aggregateEvents(board) {
@@ -96,6 +117,7 @@ export function aggregateEvents(board) {
                 merge(target, evt);
                 return agg;
             }, []);
+            console.log(board.events);
         }
     }
 }

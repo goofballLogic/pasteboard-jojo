@@ -6,9 +6,9 @@ ul.displays li {
     list-style: none;
     box-shadow: 0 0 2px black;
     margin: var(--size-small);
-    padding: var(--size-medium);
+    padding: 0 var(--size-medium);
     display: flex;
-    gap: var(--size-medium);
+    gap: var(--size-small);
     align-items: center;
     background: linear-gradient(to bottom right, #CCC, #EEE);
 }
@@ -23,6 +23,21 @@ ul.displays li::before {
 
 }
 
+ul.displays details {
+    width: 100%;
+}
+
+ul.displays summary {
+    padding: var(--size-medium);
+}
+
+ul.displays details div {
+    display: grid;
+    grid-template-columns: min-content auto;
+    gap: var(--size-small);
+    margin-left: var(--size-large);
+}
+
 ul.displays li.healthy::before {
     background: radial-gradient(greenyellow 20%, green);
     box-shadow: 0 0 10px 0 green;
@@ -34,6 +49,19 @@ ul.displays li.weak::before {
 }
 
 ul.displays li.dead::before {
-    background: radial-gradient(#F00 30%, #900);
+    background: radial-gradient(#F07 30%, #900);
     box-shadow: 0 0 10px 0px red;
+}
+
+ul.displays form {
+    margin: var(--size-large);
+}
+
+ul.displays form select {
+    padding: 0.5em;
+    min-width: 200px;
+}
+ul.displays form button {
+    padding: 0.5em;
+    min-width: 100px;
 }

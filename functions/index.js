@@ -1,7 +1,24 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { getStorage } = require("firebase-admin/storage");
 
-admin.initializeApp();
+const app = admin.initializeApp();
+
+exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").onWrite(async (change, context) => {
+    const beforeDisplays = Object.keys(change.before.data().displays || {});
+    const afterDisplays = Object.keys(change.after.data().displays || {});
+    const { boardId } = context.params;
+    const bucket = getStorage(app).bucket();
+    const payload = JSON.stringify(change.after.data());
+    for (const displayId of afterDisplays) {
+        if (!beforeDisplays.includes(displayId)) {
+            const dataFile = bucket.file(`config/${displayId.replace("_", "/")}`);
+            await dataFile.save(payload);
+            await dataFile.setMetadata({ metadata: { boardId } });
+        }
+    }
+
+});
 
 exports.fetchUserContext = functions.https.onCall(async (data, context) => {
 

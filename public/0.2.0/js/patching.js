@@ -1,5 +1,6 @@
 function asKeys(obj) {
     return Object.entries(obj).reduce((agg, [key, val]) => {
+        console.log(key, val);
         if (Array.isArray(val))
             throw new Error("Array");
         if (val && typeof val === "object") {
@@ -18,7 +19,7 @@ function asKeys(obj) {
 export async function keywiseUpdate(ref, patch) {
 
     const keywisePatch = Object.fromEntries(asKeys(patch));
-    console.log(keywisePatch);
+    console.log(ref, keywisePatch);
     await ref.update(keywisePatch);
 
 }

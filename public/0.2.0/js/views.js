@@ -65,7 +65,7 @@ function displays(model) {
     return `<ul class="displays">
 
         ${model.displays.length
-            ? model.displays.map(display).join("")
+            ? model.displays.map(displayModel => display(model, displayModel)).join("")
             : "No displays registered"}
     </ul>`;
 
@@ -84,27 +84,50 @@ const MINUTE = 60;
 const HOUR = MINUTE * 60;
 const DAY = HOUR * 24;
 
-function display(displayModel) {
+function display(model, displayModel) {
 
     const { customMetadata, updated } = displayModel;
     const { ip, city, region, country, state, sessionId } = customMetadata;
-    const [provider, identifier] = state.split(".");
+    const [provider, identifier] = state.split("_");
     const [connected] = decode(sessionId, "?")?.split("_");
 
     const updatedAgo = ago(updated);
     const connectedAgo = ago(connected);
-
+    console.log(model);
     return `<li class="${updatedAgo.age <= MINUTE * 2 ? "healthy" : updatedAgo.age <= MINUTE * 4 ? "weak" : "dead"}">
 
-        <div class="title">Unrecognised (${identifier})</div>
+
         <details>
-            <summary>Data</summary>
-            <dt>Last ping</dt><dd>${updatedAgo.description} ago</dd>
-            <dt>Connected</td><dd>${connectedAgo.description} ago</dd>
-            <dt>IP</dt><dd>${ip}</dd>
-            <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
-            <dt>Session</dt><dd>${sessionId}</dd>
+
+            <summary>Unrecognised (${identifier}) - currently showing: (none)</summary>
+            <div>
+
+                <dt>Last ping</dt><dd>${updatedAgo.description} ago</dd>
+                <dt>Connected</td><dd>${connectedAgo.description} ago</dd>
+                <dt>IP</dt><dd>${ip}</dd>
+                <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
+                <dt>Session</dt><dd>${sessionId}</dd>
+
+
+
+            </div>
+            <form class="schedule">
+
+                <input type="hidden" name="state" value="${state}" />
+                Choose board to display: <select name="next">
+
+                    <option>None</option>
+                    ${model.boards && Object.values(model.boards).map(b => `
+                        <option value="${b.metadata?.id}">${b.metadata?.name}</option>
+                    `).join("")}
+
+                </select>
+                <button>Schedule</button>
+
+            </form>
+
         </details>
+
 
     </li>`;
 

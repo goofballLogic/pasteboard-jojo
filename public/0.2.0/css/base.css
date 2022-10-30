@@ -6,8 +6,10 @@ html, body {
     --size-medium: 15px;
     --size-large: 25px;
     height: 100%;
-    font-family: Arial;
     margin: 0;
+}
+html, body, select {
+    font-family: Arial;
     font-size: var(--size-medium);
 }
 body {

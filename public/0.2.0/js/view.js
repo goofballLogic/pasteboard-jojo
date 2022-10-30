@@ -4,7 +4,7 @@ import "/__/firebase/init.js?useEmulator=true";
 
 const app = firebase.app();
 const storage = app.storage();
-const state = location.search.substring(1).split(".");
+const state = location.search.substring(1).split("_");
 const storageRef = storage.ref(["displays", ...state].join("/"));
 
 const sessionId = `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`;
@@ -32,7 +32,7 @@ async function ping() {
     const metadata = {
         customMetadata: {
             ...data,
-            state: state.join("."),
+            state: state.join("_"),
             sessionId: btoa(sessionId)
         }
     };

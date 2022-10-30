@@ -8,7 +8,7 @@ import "/__/firebase/init.js?useEmulator=true";
 import { nav, main, errorToast } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteModified, receive } from "./bus.js";
-import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore } from "./board.js";
+import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore } from "./board.js";
 import { listDisplays } from "./displays.js";
 
 async function googleSignIn(app) {
@@ -68,6 +68,38 @@ const eventHandlers = [
         history.pushState(null, "", a.href);
         render(app);
 
+    }],
+    ["schedule", (app, form) => async e => {
+
+        e.preventDefault();
+        const { previous, next, state } = Object.fromEntries(new FormData(form).entries());
+        console.log({ previous, next, state });
+        model.boards = model.boards || {};
+        if (previous) {
+
+            if (!(previous in model.boards))
+                model.boards[previous] = {};
+            const board = model.boards[previous];
+            if (!await getBoardData(board, app, previous))
+                return; // an error occurred
+            disableDisplay(board, state);
+            aggregateEvents(board);
+            await saveToStore(app, board);
+
+        }
+        if (next) {
+
+            if (!(next in model.boards))
+                model.boards[next] = {};
+            const board = model.boards[next];
+            if (!await getBoardData(board, app, next))
+                return; // an error occurred
+            enableDisplay(board, state);
+            aggregateEvents(board);
+            await saveToStore(app, board);
+
+        }
+
     }]
 
 ];
@@ -114,19 +146,11 @@ async function renderMain(app) {
 }
 
 async function buildMainModel(app) {
-    if (model.state.board) {
-        const boardData = model.boards && model.boards[model.state.board];
-        model.board = boardData || {};
-        if (!model.board.data) {
-            try {
-                const boardId = model.state.board;
-                const board = model.board;
-                await loadFromStore(app, board, boardId);
-            } catch (err) {
-                renderError(app, err.message);
-                model.error = err;
-            }
-        }
+    const boardId = model.state.board;
+    if (boardId) {
+        model.board = (model.boards && model.boards[boardId]) || {};
+        const board = model.board;
+        await getBoardData(board, app, boardId);
     }
     if (model.state.mode === "displays") {
 
@@ -134,6 +158,18 @@ async function buildMainModel(app) {
 
     }
 
+}
+
+async function getBoardData(board, app, boardId) {
+    if (!board.data) {
+        try {
+            await loadFromStore(app, board, boardId);
+        } catch (err) {
+            renderError(app, err.message);
+            model.error = err;
+        }
+    }
+    return board.data;
 }
 
 function buildState() {
@@ -161,6 +197,7 @@ function render(app) {
 
     try {
         const app = firebase.app();
+        window.app = app;
         model.features = [
             'auth',
             'database',

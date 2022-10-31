@@ -6,7 +6,6 @@ const { getFirestore, FieldValue, FieldPath } = require("firebase-admin/firestor
 const app = admin.initializeApp();
 
 exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").onWrite(async (change, context) => {
-    const beforeDisplays = Object.keys(change.before.data().displays || {});
     const afterDisplays = Object.keys(change.after.data().displays || {});
     const { boardId } = context.params;
     const payload = JSON.stringify(change.after.data());
@@ -25,12 +24,12 @@ exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").on
 
 });
 
-exports.test = functions.https.onCall(async () => {
+// exports.test = functions.https.onCall(async () => {
 
-    const displayId = "bYnRbsVC6WQd2Avwfjd6cS9TM1L2_EX3xsA8KajOF3OV2AWwu";
-    await removeDisplayFromBoards(displayId);
+//     const displayId = "bYnRbsVC6WQd2Avwfjd6cS9TM1L2_EX3xsA8KajOF3OV2AWwu";
+//     await removeDisplayFromBoards(displayId);
 
-});
+// });
 
 exports.fetchUserContext = functions.https.onCall(async (data, context) => {
 

@@ -50,7 +50,8 @@ async function ping() {
     }
 
     await storageRef.putString("", "raw", metadata);
-    //document.body.innerHTML = config?.name
+    document.title = config?.name || "Awaiting configuration";
+
 };
 
 ping();

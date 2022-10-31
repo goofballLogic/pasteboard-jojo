@@ -2,7 +2,6 @@ export async function listDisplays(app, model) {
 
     const storage = app.storage();
     const found = await storage.ref(`displays/${model.user?.uid}`).listAll();
-    console.log(found);
     const itemData = await Promise.all(found.items.map(async item => {
 
         const metadata = await metaDataOr(item, {});

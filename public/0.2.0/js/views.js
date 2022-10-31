@@ -86,20 +86,23 @@ const DAY = HOUR * 24;
 
 function display(model, displayModel) {
 
-    const { customMetadata, updated } = displayModel;
-    const { ip, city, region, country, state, sessionId } = customMetadata;
-    const [provider, identifier] = state.split("_");
+    const { health, updated, config } = displayModel;
+    const { ip, city, region, country, state, sessionId } = health;
+    const [, identifier] = state?.split("_") || [];
     const [connected] = decode(sessionId, "?")?.split("_");
 
     const updatedAgo = ago(updated);
     const connectedAgo = ago(connected);
+    const showing = model.boards && model.boards[health?.boardId]?.metadata;
+    const configured = model.boards && model.boards[config?.boardId]?.metadata;
+
     console.log(model);
     return `<li class="${updatedAgo.age <= MINUTE * 2 ? "healthy" : updatedAgo.age <= MINUTE * 4 ? "weak" : "dead"}">
 
 
         <details>
 
-            <summary>Unrecognised (${identifier}) - currently showing: (none)</summary>
+            <summary>Unrecognised (${identifier}) - currently showing: ${showing?.name ?? "(None)"}</summary>
             <div>
 
                 <dt>Last ping</dt><dd>${updatedAgo.description} ago</dd>
@@ -107,8 +110,6 @@ function display(model, displayModel) {
                 <dt>IP</dt><dd>${ip}</dd>
                 <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
                 <dt>Session</dt><dd>${sessionId}</dd>
-
-
 
             </div>
             <form class="schedule">
@@ -123,7 +124,7 @@ function display(model, displayModel) {
 
                 </select>
                 <button>Schedule</button>
-
+                ${configured ? `Currently scheduled: ${configured.name}` : ""}
             </form>
 
         </details>

@@ -5,5 +5,8 @@ service firebase.storage {
       allow write: if true;
       allow read: if request.auth.uid == provider;
     }
+    match /config/{provider}/{display} {
+      allow read: if true;
+    }
   }
 }

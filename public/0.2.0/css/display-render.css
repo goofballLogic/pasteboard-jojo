@@ -1,0 +1,13 @@
+div.note {
+    font-size: 16px;
+    position: absolute;
+    width: 200px;
+    height: fit-content;
+    min-height: 100px;
+    padding: var(--size-medium);
+    background-color: white;
+    display: inline-block;
+    box-shadow: 3px 3px 3px 0 silver;
+    border: solid 1px silver;
+    word-wrap: break-word;
+}

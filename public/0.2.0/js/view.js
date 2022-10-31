@@ -2,6 +2,7 @@ import "/__/firebase/9.12.0/firebase-app-compat.js";
 import "/__/firebase/9.12.0/firebase-storage-compat.js";
 import * as s from "/__/firebase/9.12.0/firebase-storage.js";
 import "/__/firebase/init.js?useEmulator=true";
+import { renderBoardDisplay } from "./display-render.js";
 
 const app = firebase.app();
 const storage = app.storage();
@@ -42,12 +43,14 @@ async function ping() {
     try {
         config = JSON.parse(decoder.decode(await s.getBytes(configRef)));
         metadata.customMetadata.boardId = config.id;
+        document.body.innerHTML = renderBoardDisplay(config);
+
     } catch (err) {
         metadata.customMetadata.err = err.message;
     }
 
     await storageRef.putString("", "raw", metadata);
-    document.body.innerHTML = config?.name
+    //document.body.innerHTML = config?.name
 };
 
 ping();

@@ -15,15 +15,11 @@ exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").on
     console.log("Board changed", boardId, change.before.data(), change.after.data());
     for (const displayId of afterDisplays) {
 
-        if (!beforeDisplays.includes(displayId)) {
-
-            console.log(`Adding ${displayId} to board`);
-            await removeDisplayFromBoards(displayId, boardId);
-            const dataFile = bucket.file(`config/${displayId.replace("_", "/")}`);
-            await dataFile.save(payload);
-            await dataFile.setMetadata({ metadata: { boardId } });
-
-        }
+        console.log(`Setting ${displayId} to board ${boardId}`);
+        await removeDisplayFromBoards(displayId, boardId);
+        const dataFile = bucket.file(`config/${displayId.replace("_", "/")}`);
+        await dataFile.save(payload);
+        await dataFile.setMetadata({ metadata: { boardId } });
 
     }
 

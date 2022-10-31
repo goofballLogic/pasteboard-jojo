@@ -1,3 +1,5 @@
+import { renderBoardDisplay } from "./display-render.js";
+
 const routes = {
     home: "?",
     display: "?mode=displays"
@@ -220,7 +222,7 @@ function board(model) {
         </nav>
         <article class="editor">
 
-            ${data.notes ? Object.entries(data.notes).map(note).join("") : ""}
+            ${renderBoardDisplay(data)}
 
         </article>
 
@@ -228,13 +230,3 @@ function board(model) {
 
 }
 
-function note([id, noteModel]) {
-
-    const { left, top, content } = noteModel;
-    return `
-
-        <div data-id="${id}" class="note" style="left: ${left}px; top: ${top}px;">${content?.text || "???"}</div>
-
-    `;
-
-}

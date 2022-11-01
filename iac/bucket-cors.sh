@@ -1,0 +1,1 @@
+gsutil cors set "$(dirname $0)/cors.json" gs://paste-1c305.appspot.com

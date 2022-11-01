@@ -1,6 +1,21 @@
 import id from "./id.js";
 import { keywiseUpdate } from "./patching.js";
 import merge from "./merge.js";
+import { withPending } from "./status.js";
+
+export async function fetchBoardMetadata(app, model) {
+    const boardIds = Object.keys(model?.metadata?.entitlements?.boards || {});
+    model.boards = model.boards || {};
+    const boardMetadataCollectionRef = app.firestore().collection("board_metadata");
+    await withPending(async () => {
+        for (const id of boardIds.filter(bid => !(bid in model.boards))) {
+
+            const metadataSnapshot = await boardMetadataCollectionRef.doc(id).get();
+            model.boards[id] = { metadata: metadataSnapshot.data() };
+
+        }
+    });
+}
 
 function processComponentEvent(board, boardEventName, id, eventData, component) {
     const mergeData = {};
@@ -25,9 +40,12 @@ function processComponentEvent(board, boardEventName, id, eventData, component) 
 }
 
 export async function loadFromStore(app, board, boardId) {
-    const db = firebase.firestore(app);
-    board.ref = db.collection("boards").doc(boardId);
-    board.data = (await board.ref.get()).data();
+    board.ref = firebase.firestore(app).collection("boards").doc(boardId);
+    await withPending(async () => {
+
+        board.data = (await board.ref.get()).data();
+
+    }, "Loading board");
 }
 
 export async function saveToStore(app, board) {

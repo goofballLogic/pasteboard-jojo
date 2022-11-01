@@ -4,11 +4,13 @@ const body = document.querySelector("body");
 const bodyObserver = new MutationObserver((mutationList) => {
     for (const mutation of mutationList.filter(l => l.type === "childList")) {
         const main = Array.from(mutation.addedNodes).find(n => n.tagName === "MAIN");
-        if (main && main.querySelector("article.editor")) {
-            document.body.classList.add("edit-mode");
-            initialiseEditor(main);
-        } else {
-            document.body.classList.remove("edit-mode");
+        if (main) {
+            if (main.querySelector("article.editor")) {
+                document.body.classList.add("edit-mode");
+                initialiseEditor(main);
+            } else {
+                document.body.classList.remove("edit-mode");
+            }
         }
     }
 

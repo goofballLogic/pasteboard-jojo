@@ -37,15 +37,27 @@ export function nav({ user }) {
 
 export function main(model) {
 
-    const mainContent = model.user?.email
-        ? mainLoggedIn(model)
-        : "Please log in";
+    try {
+        const mainContent = model.user?.email
+            ? mainLoggedIn(model)
+            : "Please log in";
 
-    return `<main>
+        return `<main>
 
         ${mainContent}
 
     </main>`;
+    } catch (err) {
+
+        console.error(err);
+        return `<main>
+
+            An error occurred (BM-G)
+
+        </main>
+        ${errorToast(app, { err })}`;
+
+    }
 
 }
 
@@ -98,7 +110,6 @@ function display(model, displayModel) {
     const showing = model.boards && model.boards[health?.boardId]?.metadata;
     const configured = model.boards && model.boards[config?.boardId]?.metadata;
 
-    console.log(model);
     return `<li class="${updatedAgo.age <= MINUTE * 2 ? "healthy" : updatedAgo.age <= MINUTE * 4 ? "weak" : "dead"}">
 
 
@@ -152,11 +163,20 @@ function ago(start) {
     return { age, description };
 }
 
-export function errorToast(_, errorModel) {
+export function statusToast(model) {
+
+    return `<aside class="status-toast">
+
+        ${model.message}
+
+    </aside>`;
+
+}
+export function errorToast(model) {
 
     return `<aside class="error-toast">
 
-        ${errorModel.message}
+        ${model.message}
 
     </aside>`;
 

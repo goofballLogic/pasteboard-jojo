@@ -1,3 +1,5 @@
+import { withPending } from "./status.js";
+
 function asKeys(obj) {
     return Object.entries(obj).reduce((agg, [key, val]) => {
         if (Array.isArray(val))
@@ -24,7 +26,6 @@ function asKeys(obj) {
 export async function keywiseUpdate(ref, patch) {
 
     const keywisePatch = Object.fromEntries(asKeys(patch));
-    console.log("KWP", keywisePatch);
-    await ref.update(keywisePatch);
+    await withPending(() => ref.update(keywisePatch), "Saving...");
 
 }

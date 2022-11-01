@@ -1,15 +1,11 @@
-import "/__/firebase/9.12.0/firebase-app-compat.js";
-import "/__/firebase/9.12.0/firebase-auth-compat.js";
-import "/__/firebase/9.12.0/firebase-functions-compat.js";
-import "/__/firebase/9.12.0/firebase-firestore-compat.js";
-import "/__/firebase/9.12.0/firebase-storage-compat.js";
-import "/__/firebase/9.12.0/firebase-storage.js";
-import "/__/firebase/init.js?useEmulator=true";
-import { nav, main, errorToast } from "./views.js"
+import "./includes.js";
+import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteModified, receive } from "./bus.js";
-import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore } from "./board.js";
+import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata } from "./board.js";
 import { listDisplays } from "./displays.js";
+import { fetchUserContext, createBoard } from "./server.js";
+import { renderError } from "./status.js";
 
 async function googleSignIn(app) {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -46,18 +42,16 @@ const eventHandlers = [
             id: `${model.user?.uid}_${Date.now()}`,
             name: data.get("name")
         };
-        const functions = app.functions();
         try {
 
-            const createBoard = await functions.httpsCallable("createBoard")(board);
-            model.metadata.entitlements = createBoard.data.entitlements;
-            await fetchBoardMetadata(app);
+            model.metadata.entitlements = await createBoard(app, board).data.entitlements;
+            await fetchBoardMetadata(app, model);
             renderMain(app);
 
         } catch (err) {
 
             console.log(err);
-            renderError(app, "An error occurred creating the board");
+            renderError("An error occurred creating the board");
 
         }
 
@@ -95,18 +89,6 @@ const eventHandlers = [
 
 ];
 
-async function fetchBoardMetadata(app) {
-    const boardIds = Object.keys(model?.metadata?.entitlements?.boards || {});
-    model.boards = model.boards || {};
-    const boardMetadataCollectionRef = app.firestore().collection("board_metadata");
-    for (const id of boardIds.filter(bid => !(bid in model.boards))) {
-
-        const metadataSnapshot = await boardMetadataCollectionRef.doc(id).get();
-        model.boards[id] = { metadata: metadataSnapshot.data() };
-
-    }
-}
-
 function handleAction(app, target) {
     for (let [key, handler] of eventHandlers) {
         if (target.classList.contains(key)) {
@@ -115,9 +97,9 @@ function handleAction(app, target) {
     }
 }
 
-let model = { loading: true };
+export let model = { loading: true };
 
-const domParser = new DOMParser();
+export const domParser = new DOMParser();
 
 function renderNav(app) {
     const doc = domParser.parseFromString(nav(model), "text/html");
@@ -156,7 +138,7 @@ async function getBoardData(board, app, boardId) {
         try {
             await loadFromStore(app, board, boardId);
         } catch (err) {
-            renderError(app, err.message);
+            renderError(err.message);
             model.error = err;
         }
     }
@@ -172,13 +154,6 @@ function buildState() {
         model.state.mode = url.searchParams.get("mode");
 }
 
-function renderError(app, message) {
-    const doc = domParser.parseFromString(errorToast(model, { message }), "text/html");
-    const rendered = doc.body.children[0];
-    document.body.appendChild(rendered);
-    setTimeout(() => rendered.remove(), 5000);
-}
-
 function render(app) {
     renderNav(app);
     renderMain(app);
@@ -189,17 +164,6 @@ function render(app) {
     try {
         const app = firebase.app();
         window.app = app;
-        model.features = [
-            'auth',
-            'database',
-            'firestore',
-            'functions',
-            'messaging',
-            'storage',
-            'analytics',
-            'remoteConfig',
-            'performance',
-        ].filter(feature => typeof app[feature] === 'function');
 
         const body = [
             nav(model),
@@ -218,10 +182,9 @@ function render(app) {
             if (model.user === user) return;
             if (user) {
                 model = { user };
-                const functions = app.functions();
-                const result = await functions.httpsCallable("fetchUserContext")();
+                const result = await fetchUserContext(app);
                 model.metadata = result.data.metadata;
-                await fetchBoardMetadata(app);
+                await fetchBoardMetadata(app, model);
 
             } else {
                 model = { user };
@@ -264,7 +227,7 @@ function noteAddedHandler(app) {
             await saveToStore(app, model.board);
             updateEditor(document.querySelector("main"), main(model));
         } catch (err) {
-            renderError(app, err.message);
+            renderError(err.message);
         }
 
     };
@@ -278,7 +241,7 @@ function noteModifiedHandler(app) {
             await saveToStore(app, model.board);
             updateEditor(document.querySelector("main"), main(model));
         } catch (err) {
-            renderError(app, err.message);
+            renderError(err.message);
         }
     }
 }

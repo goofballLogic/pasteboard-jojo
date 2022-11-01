@@ -48,10 +48,16 @@ body > .loading {
     text-align: center;
     margin-top: 100px;
 }
-.error-toast {
+.error-toast, .status-toast {
     margin: var(--size-medium);
     padding: var(--size-medium);
-    background-color: #FEE;
     position: absolute;
     z-index: 1;
+    border-radius: 2px;
+}
+.error-toast {
+    background-color: #FEE;
+}
+.status-toast {
+    background-color: #ABCD;
 }

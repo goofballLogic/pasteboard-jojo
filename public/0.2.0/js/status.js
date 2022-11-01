@@ -4,7 +4,7 @@ export async function withPending(action, message) {
     let toast;
     try {
         toast = renderPending(message || "Please wait...");
-        await action();
+        return await action();
     } finally {
         toast.remove();
     }

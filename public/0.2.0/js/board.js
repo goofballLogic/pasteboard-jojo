@@ -7,14 +7,12 @@ export async function fetchBoardMetadata(app, model) {
     const boardIds = Object.keys(model?.metadata?.entitlements?.boards || {});
     model.boards = model.boards || {};
     const boardMetadataCollectionRef = app.firestore().collection("board_metadata");
-    await withPending(async () => {
-        for (const id of boardIds.filter(bid => !(bid in model.boards))) {
+    for (const id of boardIds.filter(bid => !(bid in model.boards))) {
 
-            const metadataSnapshot = await boardMetadataCollectionRef.doc(id).get();
-            model.boards[id] = { metadata: metadataSnapshot.data() };
+        const metadataSnapshot = await withPending(async () => boardMetadataCollectionRef.doc(id).get(), "Loading...");
+        model.boards[id] = { metadata: metadataSnapshot.data() };
 
-        }
-    });
+    }
 }
 
 function processComponentEvent(board, boardEventName, id, eventData, component) {
@@ -135,7 +133,6 @@ export function aggregateEvents(board) {
                 merge(target, evt);
                 return agg;
             }, []);
-            console.log(board.events);
         }
     }
 }

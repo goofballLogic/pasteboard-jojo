@@ -1,4 +1,4 @@
-import { withPending } from "./status";
+import { withPending } from "./status.js";
 
 export async function fetchUserContext(app) {
     return await withPending(

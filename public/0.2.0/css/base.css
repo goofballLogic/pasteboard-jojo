@@ -50,14 +50,14 @@ body > .loading {
 }
 .error-toast, .status-toast {
     margin: var(--size-medium);
-    padding: var(--size-medium);
+    padding: var(--size-large);
     position: absolute;
     z-index: 1;
-    border-radius: 2px;
+    border-radius: 5px;
 }
 .error-toast {
-    background-color: #FEE;
+    background-color: #FAA;
 }
 .status-toast {
-    background-color: #ABCD;
+    background-color: #EEED;
 }

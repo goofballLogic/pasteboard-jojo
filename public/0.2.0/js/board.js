@@ -9,7 +9,7 @@ export async function fetchBoardMetadata(app, model) {
     const boardMetadataCollectionRef = app.firestore().collection("board_metadata");
     for (const id of boardIds.filter(bid => !(bid in model.boards))) {
 
-        const metadataSnapshot = await withPending(async () => boardMetadataCollectionRef.doc(id).get(), "Loading...");
+        const metadataSnapshot = await withPending(async () => boardMetadataCollectionRef.doc(id).get(), "Loading boards...");
         model.boards[id] = { metadata: metadataSnapshot.data() };
 
     }

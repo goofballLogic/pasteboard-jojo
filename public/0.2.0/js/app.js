@@ -44,7 +44,8 @@ const eventHandlers = [
         };
         try {
 
-            model.metadata.entitlements = await createBoard(app, board).data.entitlements;
+            const created = await createBoard(app, board);
+            model.metadata.entitlements = created.data.entitlements;
             await fetchBoardMetadata(app, model);
             renderMain(app);
 

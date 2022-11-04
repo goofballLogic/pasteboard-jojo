@@ -13,6 +13,8 @@ const sessionId = `${new Date().toISOString()}_${Math.round(Math.random() * Date
 const decoder = new TextDecoder();
 
 let data = null;
+let rawConfig = null, config = null;
+
 async function ping() {
 
     if (!data) {
@@ -39,9 +41,10 @@ async function ping() {
             sessionId: btoa(sessionId)
         }
     };
-    let config;
+
     try {
-        config = JSON.parse(decoder.decode(await s.getBytes(configRef)));
+        rawConfig = decoder.decode(await s.getBytes(configRef));
+        config = JSON.parse(rawConfig);
         metadata.customMetadata.boardId = config.id;
         document.body.innerHTML = renderBoardDisplay(config);
 

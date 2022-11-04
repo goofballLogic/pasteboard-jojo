@@ -29,6 +29,5 @@ function renderHTML(html, autoExpire) {
     const rendered = doc.body.children[0];
     document.body.appendChild(rendered);
     if (autoExpire) setTimeout(() => rendered.remove(), 5000);
-    console.log("Rendered", rendered);
     return rendered;
 }

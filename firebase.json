@@ -8,8 +8,8 @@
     ],
     "rewrite": [
       {
-        "source": "/latest/**",
-        "target": "/0.2.0/**",
+        "source": "/latest/:path**",
+        "target": "/0.2.0/:path",
         "type": 302
       }
     ]

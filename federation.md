@@ -2,7 +2,7 @@
 
 Access to the app can be federated to other domains.
 
-'''mermaid
+```mermaid
 
 sequenceDiagram
     participant User
@@ -21,4 +21,4 @@ sequenceDiagram
     User->>YCS: Follow link to purchase
     YCS->>YC:??? 
   
-'''
+```

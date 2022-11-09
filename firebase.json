@@ -19,7 +19,7 @@
         "headers": [
           {
             "key": "Access-Control-Allow-Origin",
-            "value": "telrod.com"
+            "value": "https://telrod.com"
           }
         ]
       }

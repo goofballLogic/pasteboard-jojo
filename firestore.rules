@@ -1,9 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /tests/test {
-      allow create, read, update, delete
-    }
     match /users/{userId} {
       allow create, read, update, delete: if
         request.auth != null

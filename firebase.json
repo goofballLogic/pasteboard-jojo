@@ -5,6 +5,13 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrite": [
+      {
+        "source": "/latest/**",
+        "target": "/0.2.0/**",
+        "type": 302
+      }
     ]
   },
   "functions": [

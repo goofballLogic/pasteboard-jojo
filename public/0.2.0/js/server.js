@@ -1,5 +1,5 @@
 import { withPending } from "./status.js";
-import { functions } from "./integration.js";
+import { functions } from "../../integration.js";
 
 export async function fetchUserContext() {
     return await withPending(

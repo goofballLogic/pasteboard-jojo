@@ -1,3 +1,4 @@
+import "./integration-api.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteModified, receive } from "./bus.js";
@@ -5,17 +6,16 @@ import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore,
 import { listDisplays } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
-import { app, auth, googleAuthProvider } from "./integration.js";
+import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "../../integration.js";
 
 async function googleSignIn() {
-    await auth.signInWithPopup(googleAuthProvider);
+    await signInWithPopup(googleAuthProvider);
 }
 
 async function emailSignIn() {
-    const auth = firebase.auth(app);
     const email = window.prompt("email");
     const password = window.prompt("password");
-    await auth.signInWithEmailAndPassword(email, password);
+    await signInWithEmailAndPassword(email, password);
 }
 
 const eventHandlers = [
@@ -23,13 +23,15 @@ const eventHandlers = [
 
         const authStrategy = target.classList.contains("google") ? googleSignIn : emailSignIn;
         return async function signIn() {
-            await authStrategy(app);
+
+            await authStrategy();
+
         }
 
     }],
     ["sign-out", () => async () => {
 
-        await auth.signOut();
+        await signOut();
 
     }],
     ["new-board", (form) => async e => {
@@ -65,8 +67,7 @@ const eventHandlers = [
     ["schedule", (form) => async e => {
 
         e.preventDefault();
-        const { previous, next, state } = Object.fromEntries(new FormData(form).entries());
-        console.log({ previous, next, state });
+        const { next, state } = Object.fromEntries(new FormData(form).entries());
         model.boards = model.boards || {};
         if (next) {
 
@@ -111,7 +112,6 @@ async function renderMain() {
     model.error = null;
     buildState();
     await buildMainModel();
-    console.log(1, model);
     const doc = domParser.parseFromString(main(model), "text/html");
     const rendered = doc.body.querySelector("main");
     document.querySelector("body > main").replaceWith(rendered);
@@ -175,12 +175,12 @@ function render() {
         const container = document.body;
         registerListeners(container);
 
-        app.auth().onAuthStateChanged(async user => {
+        onAuthStateChanged(async user => {
 
             if (model.user === user) return;
             if (user) {
                 model = { user };
-                const result = await fetchUserContext(app);
+                const result = await fetchUserContext();
                 model.metadata = result.data.metadata;
                 await fetchBoardMetadata(model);
 

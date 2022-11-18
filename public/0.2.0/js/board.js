@@ -2,7 +2,7 @@ import id from "./id.js";
 import { keywiseUpdate } from "./patching.js";
 import merge from "./merge.js";
 import { withPending } from "./status.js";
-import { collections } from "./integration.js";
+import { collections } from "../../integration.js";
 
 export async function fetchBoardMetadata(model) {
     const boardIds = Object.keys(model?.metadata?.entitlements?.boards || {});

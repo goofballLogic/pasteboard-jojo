@@ -60,7 +60,7 @@ const eventHandlers = [
     ["client-side", (app, a) => async e => {
 
         e.preventDefault();
-        history.pushState(null, "", a.href);
+        history.pushState(null, "", a.href.replace(/\?$/, ""));
         render(app);
 
     }],

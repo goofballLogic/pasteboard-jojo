@@ -9,7 +9,7 @@
     "redirects": [
       {
         "source": "/latest/:path*",
-        "destination": "/0.2.0/:path",
+        "destination": "/0.2.0/:path*",
         "type": 302
       }
     ],
@@ -23,7 +23,8 @@
           }
         ]
       }
-    ]
+    ],
+    "cleanUrls": true
   },
   "functions": [
     {

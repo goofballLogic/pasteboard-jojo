@@ -1,4 +1,3 @@
-import "./includes.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteModified, receive } from "./bus.js";
@@ -6,14 +5,13 @@ import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore,
 import { listDisplays } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
+import { app, auth, googleAuthProvider } from "./integration.js";
 
-async function googleSignIn(app) {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const auth = firebase.auth(app);
-    await auth.signInWithPopup(provider);
+async function googleSignIn() {
+    await auth.signInWithPopup(googleAuthProvider);
 }
 
-async function emailSignIn(app) {
+async function emailSignIn() {
     const auth = firebase.auth(app);
     const email = window.prompt("email");
     const password = window.prompt("password");
@@ -21,7 +19,7 @@ async function emailSignIn(app) {
 }
 
 const eventHandlers = [
-    ["sign-in", (app, target) => {
+    ["sign-in", (target) => {
 
         const authStrategy = target.classList.contains("google") ? googleSignIn : emailSignIn;
         return async function signIn() {
@@ -29,12 +27,12 @@ const eventHandlers = [
         }
 
     }],
-    ["sign-out", app => async () => {
+    ["sign-out", () => async () => {
 
-        await firebase.auth(app).signOut();
+        await auth.signOut();
 
     }],
-    ["new-board", (app, form) => async e => {
+    ["new-board", (form) => async e => {
 
         e.preventDefault();
         const data = new FormData(form);
@@ -44,10 +42,10 @@ const eventHandlers = [
         };
         try {
 
-            const created = await createBoard(app, board);
+            const created = await createBoard(board);
             model.metadata.entitlements = created.data.entitlements;
-            await fetchBoardMetadata(app, model);
-            renderMain(app);
+            await fetchBoardMetadata(model);
+            renderMain();
 
         } catch (err) {
 
@@ -57,14 +55,14 @@ const eventHandlers = [
         }
 
     }],
-    ["client-side", (app, a) => async e => {
+    ["client-side", (a) => async e => {
 
         e.preventDefault();
         history.pushState(null, "", a.href.replace(/\?$/, ""));
-        render(app);
+        render();
 
     }],
-    ["schedule", (app, form) => async e => {
+    ["schedule", (form) => async e => {
 
         e.preventDefault();
         const { previous, next, state } = Object.fromEntries(new FormData(form).entries());
@@ -75,14 +73,14 @@ const eventHandlers = [
             if (!(next in model.boards))
                 model.boards[next] = {};
             const board = model.boards[next];
-            if (!await getBoardData(board, app, next))
+            if (!await getBoardData(board, next))
                 return; // an error occurred
             disableDisplay(board, state);
             aggregateEvents(board);
-            await saveToStore(app, board);
+            await saveToStore(board);
             enableDisplay(board, state);
             aggregateEvents(board);
-            await saveToStore(app, board);
+            await saveToStore(board);
 
         }
 
@@ -90,10 +88,10 @@ const eventHandlers = [
 
 ];
 
-function handleAction(app, target) {
+function handleAction(target) {
     for (let [key, handler] of eventHandlers) {
         if (target.classList.contains(key)) {
-            return handler(app, target);
+            return handler(target);
         }
     }
 }
@@ -106,38 +104,39 @@ function renderNav(app) {
     const doc = domParser.parseFromString(nav(model), "text/html");
     const rendered = doc.body.querySelector("nav");
     document.querySelector("body > nav").replaceWith(rendered);
-    registerListeners(rendered, app);
+    registerListeners(rendered);
 }
 
-async function renderMain(app) {
+async function renderMain() {
     model.error = null;
     buildState();
-    await buildMainModel(app);
+    await buildMainModel();
+    console.log(1, model);
     const doc = domParser.parseFromString(main(model), "text/html");
     const rendered = doc.body.querySelector("main");
     document.querySelector("body > main").replaceWith(rendered);
-    registerListeners(rendered, app);
+    registerListeners(rendered);
 }
 
-async function buildMainModel(app) {
+async function buildMainModel() {
     const boardId = model.state.board;
     if (boardId) {
         model.board = (model.boards && model.boards[boardId]) || {};
         const board = model.board;
-        await getBoardData(board, app, boardId);
+        await getBoardData(board, boardId);
     }
     if (model.state.mode === "displays") {
 
-        model.displays = await listDisplays(app, model);
+        model.displays = await listDisplays(model);
 
     }
 
 }
 
-async function getBoardData(board, app, boardId) {
+async function getBoardData(board, boardId) {
     if (!board.data) {
         try {
-            await loadFromStore(app, board, boardId);
+            await loadFromStore(board, boardId);
         } catch (err) {
             renderError(err.message);
             model.error = err;
@@ -155,16 +154,14 @@ function buildState() {
         model.state.mode = url.searchParams.get("mode");
 }
 
-function render(app) {
-    renderNav(app);
-    renderMain(app);
+function render() {
+    renderNav();
+    renderMain();
 }
 
 (async function initialize() {
 
     try {
-        const app = firebase.app();
-        window.app = app;
 
         const body = [
             nav(model),
@@ -172,11 +169,11 @@ function render(app) {
         ].join("");
         document.body.innerHTML = body;
 
-        receive(noteModified, noteModifiedHandler(app));
-        receive(noteAdded, noteAddedHandler(app));
-        window.addEventListener("popstate", () => render(app));
+        receive(noteModified, noteModifiedHandler());
+        receive(noteAdded, noteAddedHandler());
+        window.addEventListener("popstate", render);
         const container = document.body;
-        registerListeners(container, app);
+        registerListeners(container);
 
         app.auth().onAuthStateChanged(async user => {
 
@@ -185,7 +182,7 @@ function render(app) {
                 model = { user };
                 const result = await fetchUserContext(app);
                 model.metadata = result.data.metadata;
-                await fetchBoardMetadata(app, model);
+                await fetchBoardMetadata(model);
 
             } else {
                 model = { user };
@@ -195,7 +192,7 @@ function render(app) {
                     location.href = url;
                 }
             }
-            render(app);
+            render();
         });
 
     } catch (e) {
@@ -205,27 +202,26 @@ function render(app) {
 
     }
 
+}());
 
-}())
-
-function registerListeners(container, app) {
+function registerListeners(container) {
     for (const button of container.querySelectorAll("button")) {
-        button.addEventListener("click", handleAction(app, button));
+        button.addEventListener("click", handleAction(button));
     }
     for (const form of container.querySelectorAll("form")) {
-        form.addEventListener("submit", handleAction(app, form));
+        form.addEventListener("submit", handleAction(form));
     }
     for (const a of container.querySelectorAll("a.client-side")) {
-        a.addEventListener("click", handleAction(app, a));
+        a.addEventListener("click", handleAction(a));
     }
 }
 
-function noteAddedHandler(app) {
+function noteAddedHandler() {
     return async eventData => {
         try {
             addNote(model.board, eventData);
             aggregateEvents(model.board);
-            await saveToStore(app, model.board);
+            await saveToStore(model.board);
             updateEditor(document.querySelector("main"), main(model));
         } catch (err) {
             renderError(err.message);
@@ -234,12 +230,12 @@ function noteAddedHandler(app) {
     };
 }
 
-function noteModifiedHandler(app) {
+function noteModifiedHandler() {
     return async eventData => {
         try {
             modifyNote(model.board, eventData);
             aggregateEvents(model.board);
-            await saveToStore(app, model.board);
+            await saveToStore(model.board);
             updateEditor(document.querySelector("main"), main(model));
         } catch (err) {
             renderError(err.message);

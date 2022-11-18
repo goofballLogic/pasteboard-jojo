@@ -1,15 +1,16 @@
 import { withPending } from "./status.js";
+import { functions } from "./integration.js";
 
-export async function fetchUserContext(app) {
+export async function fetchUserContext() {
     return await withPending(
-        () => app.functions().httpsCallable("fetchUserContext")(),
+        () => functions.fetchUserContext(),
         "Loading user data..."
     );
 }
 
-export async function createBoard(app, board) {
+export async function createBoard(board) {
     return await withPending(
-        () => app.functions().httpsCallable("createBoard")(board),
+        () => functions.createBoard(board),
         "Creating the board. Please wait."
     );
 }

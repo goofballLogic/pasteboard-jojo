@@ -55,7 +55,7 @@ export function main(model) {
             An error occurred (BM-G)
 
         </main>
-        ${errorToast(app, { err })}`;
+        ${errorToast(err)}`;
 
     }
 
@@ -76,12 +76,22 @@ function mainLoggedIn(model) {
 
 function displays(model) {
 
-    return `<ul class="displays">
+    const url = new URL(location.href);
+    url.search = `${model.user.uid}_${Date.now()}`;
+    url.pathname = url.pathname.replace("/app", "/view");
+
+    return `
+
+    <a target="_blank" href="${url.href}">View</a>
+    <ul class="displays">
 
         ${model.displays.length
             ? model.displays.map(displayModel => display(model, displayModel)).join("")
             : "No displays registered"}
-    </ul>`;
+    </ul>
+
+
+    `;
 
 }
 
@@ -172,8 +182,10 @@ export function statusToast(model) {
     </aside>`;
 
 }
+
 export function errorToast(model) {
 
+    console.error(new Error(model.message));
     return `<aside class="error-toast">
 
         ${model.message}

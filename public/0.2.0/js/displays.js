@@ -1,8 +1,8 @@
-export async function listDisplays(app, model) {
+import { storage } from "./integration.js";
 
-    const storage = app.storage();
+export async function listDisplays(model) {
     const found = await storage.ref(`displays/${model.user?.uid}`).listAll();
-    const itemData = await Promise.all(found.items.map(async item => {
+    const itemData = await Promise.all(found.items.map(async (item) => {
 
         const metadata = await metaDataOr(item, {});
         const configMetadata = await metaDataOr(storage.ref(item.fullPath.replace("displays/", "config/")), {});
@@ -14,7 +14,6 @@ export async function listDisplays(app, model) {
         };
     }));
     return itemData;
-
 }
 
 async function metaDataOr(item, alt) {

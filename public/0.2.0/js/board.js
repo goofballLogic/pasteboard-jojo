@@ -2,16 +2,15 @@ import id from "./id.js";
 import { keywiseUpdate } from "./patching.js";
 import merge from "./merge.js";
 import { withPending } from "./status.js";
+import { collections } from "./integration.js";
 
-export async function fetchBoardMetadata(app, model) {
+export async function fetchBoardMetadata(model) {
     const boardIds = Object.keys(model?.metadata?.entitlements?.boards || {});
     model.boards = model.boards || {};
-    const boardMetadataCollectionRef = app.firestore().collection("board_metadata");
     for (const id of boardIds.filter(bid => !(bid in model.boards))) {
-
-        const metadataSnapshot = await withPending(async () => boardMetadataCollectionRef.doc(id).get(), "Loading boards...");
+        const metadataSnapshot = await withPending(async () =>
+            collections.boardMetadata.doc(id).get(), "Loading boards...");
         model.boards[id] = { metadata: metadataSnapshot.data() };
-
     }
 }
 
@@ -37,8 +36,8 @@ function processComponentEvent(board, boardEventName, id, eventData, component) 
     board.events.push({ id, [boardEventName]: mergeData });
 }
 
-export async function loadFromStore(app, board, boardId) {
-    board.ref = firebase.firestore(app).collection("boards").doc(boardId);
+export async function loadFromStore(board, boardId) {
+    board.ref = collections.boards.doc(boardId);
     await withPending(async () => {
 
         board.data = (await board.ref.get()).data();
@@ -46,7 +45,7 @@ export async function loadFromStore(app, board, boardId) {
     }, "Loading board");
 }
 
-export async function saveToStore(app, board) {
+export async function saveToStore(board) {
 
     if (!(board.events?.length)) return;
     const notes = {};

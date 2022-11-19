@@ -29,3 +29,5 @@ export const collections = {
     boardMetadata: app.firestore().collection("board_metadata"),
     boards: app.firestore().collection("boards")
 };
+
+export const deleteFieldValue = firebase.firestore.FieldValue.delete();

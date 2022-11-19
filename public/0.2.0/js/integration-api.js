@@ -7,7 +7,8 @@ import {
     storage,
     getBytes,
     functions,
-    collections
+    collections,
+    deleteFieldValue
 } from "../../integration.js";
 
 verifyAPI("fetchUserContext", functions, "function", "functions");

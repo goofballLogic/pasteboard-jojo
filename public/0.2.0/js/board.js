@@ -17,6 +17,9 @@ export async function fetchBoardMetadata(model) {
 function processComponentEvent(board, boardEventName, id, eventData, component) {
     const mergeData = {};
     if (eventData) {
+        if (eventData.deleted) {
+            mergeData.deleted = eventData.deleted;
+        }
         if ("left" in eventData && component.left !== eventData.left) {
             mergeData.left = eventData.left;
             component.left = mergeData.left;
@@ -31,6 +34,7 @@ function processComponentEvent(board, boardEventName, id, eventData, component) 
             component.content = component.content || {};
             component.content.text = eventData.content.text;
         }
+
     }
     board.events = board.events || [];
     board.events.push({ id, [boardEventName]: mergeData });
@@ -51,11 +55,11 @@ export async function saveToStore(board) {
     const notes = {};
     const displays = {};
     const patch = { notes, displays };
-
     while (board.events.length) {
         const evt = board.events.shift();
         addNoteEventToPatch(evt["add-note"], evt);
         addNoteEventToPatch(evt["merge-note"], evt);
+        addNoteEventToPatch(evt["delete-note"], evt);
         if ("enable-display" in evt) {
             displays[evt.id] = { show: true };
         }
@@ -74,16 +78,21 @@ export async function saveToStore(board) {
     }
 }
 
+export function deleteNote(board, eventData) {
+    try {
+        const noteId = ensureNoteId(eventData);
+        const notes = ensureNotes(board, noteId);
+        delete notes[noteId];
+        processComponentEvent(board, "delete-note", noteId, { deleted: true });
+    } catch (err) {
+        throw new Error(`Failed to delete note (BDN-${err.message})`);
+    }
+}
+
 export function modifyNote(board, eventData) {
     try {
-        const noteId = eventData.id;
-        if (!noteId)
-            throw new Error("NID");
-        if (!board?.data)
-            throw new Error("NBD");
-        const notes = board.data.notes = board.data.notes || {};
-        if (!notes)
-            throw new Error(`NNN:${noteId})`);
+        const noteId = ensureNoteId(eventData);
+        const notes = ensureNotes(board, noteId);
         const note = notes[noteId];
         if (!note)
             throw new Error(`NN:${noteId})`);
@@ -91,6 +100,22 @@ export function modifyNote(board, eventData) {
     } catch (err) {
         throw new Error(`Failed to update modified note (BMN-${err.message})`);
     }
+}
+
+function ensureNotes(board, noteId) {
+    if (!board?.data)
+        throw new Error("NBD");
+    const notes = board.data.notes = board.data.notes || {};
+    if (!notes)
+        throw new Error(`NNN:${noteId})`);
+    return notes;
+}
+
+function ensureNoteId(eventData) {
+    const noteId = eventData.id;
+    if (!noteId)
+        throw new Error("NID");
+    return noteId;
 }
 
 export function disableDisplay(board, displayId) {
@@ -124,13 +149,9 @@ export function aggregateEvents(board) {
     } else {
         if (Array.isArray(board.events) && board.events.length) {
             board.events = board.events.reduce((agg, evt) => {
-                let target = agg.find(x => x.id === evt.id);
-                if (!target) {
-                    target = {};
-                    agg = [...agg, target];
-                }
+                const target = agg.find(x => x.id === evt.id) || {};
                 merge(target, evt);
-                return agg;
+                return [...agg, target];
             }, []);
         }
     }

@@ -1,9 +1,11 @@
 export const noteModified = Symbol("Note modified");
 export const noteAdded = Symbol("Note added");
+export const noteDeleted = Symbol("Note deleted");
 
 const messages = {
     [noteModified]: "pbj:note-modified",
-    [noteAdded]: "pbj:note-added"
+    [noteAdded]: "pbj:note-added",
+    [noteDeleted]: "pbj:note-deleted"
 };
 
 export function send(messageType, detail) {

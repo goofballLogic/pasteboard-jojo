@@ -1,3 +1,4 @@
+import { deleteFieldValue } from "../../integration.js";
 import { withPending } from "./status.js";
 
 function asKeys(obj) {
@@ -13,7 +14,7 @@ function asKeys(obj) {
         if (val === undefined) {
             return [
                 ...agg,
-                [key, firebase.firestore.FieldValue.delete()]
+                [key, deleteFieldValue]
             ]
         }
         return [
@@ -25,7 +26,17 @@ function asKeys(obj) {
 
 export async function keywiseUpdate(ref, patch) {
 
-    const keywisePatch = Object.fromEntries(asKeys(patch));
+    const keywisePatch = decorateDeletions(Object.fromEntries(asKeys(patch)));
     await withPending(() => ref.update(keywisePatch), "Saving...");
 
+}
+
+function decorateDeletions(patch) {
+    Object.keys(patch).forEach(key => {
+        if (key.endsWith(".deleted")) {
+            delete patch[key];
+            patch[key.replace(/\.deleted$/, "")] = deleteFieldValue;
+        }
+    });
+    return patch;
 }

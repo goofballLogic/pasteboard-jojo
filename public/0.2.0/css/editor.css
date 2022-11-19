@@ -37,3 +37,7 @@ article.editor {
     user-select: none;
 
 }
+
+article.editor .note.selected {
+    outline: solid 10px #07F7;
+}

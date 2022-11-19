@@ -1,4 +1,4 @@
-import { noteAdded, noteModified, send } from "./bus.js";
+import { noteAdded, noteDeleted, noteModified, send } from "./bus.js";
 
 const body = document.querySelector("body");
 const bodyObserver = new MutationObserver((mutationList) => {
@@ -27,6 +27,7 @@ export function updateEditor(main, updated) {
         editorContent.innerHTML = updatedContent.innerHTML;
         intiailiseEditorSurfaceContent(editorContent);
     }
+    updateSelectionDisplay();
 
 }
 
@@ -35,8 +36,11 @@ function initialiseEditor(main) {
     const editorSurface = main.querySelector("article.editor");
     makeDraggable(editorSurface);
     intiailiseEditorSurfaceContent(editorSurface);
+    updateSelectionDisplay();
 
     const menuSurface = main.querySelector("nav.editor");
+    menuSurface.querySelector("button.delete-note").addEventListener("click", e =>
+        selectionState.id && send(noteDeleted, { id: selectionState.id }));
     menuSurface.querySelector("button.fit")?.addEventListener("click", e =>
         zoomToFit(editorSurface, window.innerWidth - 20, window.innerHeight - 20));
     menuSurface.querySelector("button.fit-width")?.addEventListener("click", e =>
@@ -47,26 +51,40 @@ function initialiseEditor(main) {
     zoomToFit(editorSurface, window.innerWidth - 20, window.innerHeight - 20);
     editorSurface.addEventListener("dblclick", e => {
 
-        const content = prompt("Content");
-        if (!content) return;
-        const note = document.createElement("DIV");
-        note.className = "note";
-        note.textContent = content;
-        note.style.visibility = "hidden";
-        editorSurface.appendChild(note);
+        if (e.target.classList.contains("note")) {
 
-        const rect = editorSurface.getBoundingClientRect();
-        const zoom = rect.width / editorSurface.offsetWidth;
-        const left = snapX((e.clientX - rect.left - (note.offsetWidth / 2)) / zoom);
-        const top = snapY((e.clientY - rect.top - (note.offsetHeight / 2)) / zoom);
-        note.style.left = `${left}px`;
-        note.style.top = `${top}px`;
+            const note = e.target;
+            const updated = prompt("Content", note.textContent);
+            note.textContent = updated;
+            send(noteModified, {
+                id: note.dataset.id,
+                content: { text: updated }
+            });
 
-        send(noteAdded, {
-            top: note.offsetTop,
-            left: note.offsetLeft,
-            content: { text: content }
-        });
+        } else {
+
+            const content = prompt("Content");
+            if (!content) return;
+            const note = document.createElement("DIV");
+            note.className = "note";
+            note.textContent = content;
+            note.style.visibility = "hidden";
+            editorSurface.appendChild(note);
+
+            const rect = editorSurface.getBoundingClientRect();
+            const zoom = rect.width / editorSurface.offsetWidth;
+            const left = snapX((e.clientX - rect.left - (note.offsetWidth / 2)) / zoom);
+            const top = snapY((e.clientY - rect.top - (note.offsetHeight / 2)) / zoom);
+            note.style.left = `${left}px`;
+            note.style.top = `${top}px`;
+
+            send(noteAdded, {
+                top: note.offsetTop,
+                left: note.offsetLeft,
+                content: { text: content }
+            });
+
+        }
 
     });
 }
@@ -82,8 +100,50 @@ function intiailiseEditorSurfaceContent(editorSurface) {
 function snapX(coord) {
     return Math.round(coord / snapXsize) * snapXsize;
 }
+
 function snapY(coord) {
     return Math.round(coord / snapYsize) * snapYsize;
+}
+
+function parseOr(maybeJSON, alt) {
+    try {
+        return JSON.parse(maybeJSON) || alt;
+    } catch (err) {
+        return alt;
+    }
+}
+
+let selectionState;
+loadSelectionState(true);
+
+export function loadSelectionState(forceReload = false) {
+    if (forceReload) {
+        selectionState = parseOr(sessionStorage.getItem("selection-state"), {});
+    }
+    return selectionState;
+}
+export function saveSelectionState(obj) {
+    obj = obj || selectionState;
+    sessionStorage.setItem("selection-state", JSON.stringify(obj));
+    selectionState = obj;
+}
+
+function selectById(id) {
+
+    selectionState.id = id;
+    saveSelectionState();
+    updateSelectionDisplay();
+
+}
+
+function updateSelectionDisplay() {
+
+    const previously = Array.from(document.querySelectorAll(".note.selected"));
+    previously.forEach(note => note.classList.remove("selected"));
+    const selected = document.querySelector(`[data-id="${selectionState.id}"]`);
+    if (!selected) return;
+    selected.classList.add("selected");
+
 }
 
 function makeDraggable(draggable) {
@@ -92,6 +152,12 @@ function makeDraggable(draggable) {
         moving: false
     };
     draggable.addEventListener("mousedown", e => {
+
+        if (e.target.classList.contains("note"))
+            selectById(e.target.dataset.id);
+        else
+            selectById(null);
+
         if (e.target === draggable) {
             const boundingRect = draggable.getBoundingClientRect();
             const zoom = boundingRect.width / draggable.offsetWidth;

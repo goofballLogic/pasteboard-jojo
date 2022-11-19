@@ -250,6 +250,9 @@ function board(model) {
             <button class="editor fit">Fit &nwnear;</button>
             <button class="editor fit-width">Fit &lrarr;</button>
             <button class="editor fit-height">Fit &udarr;</button>
+            <hr />
+            Note:<br />
+            <button class="editor delete-note">Delete note ⚠</button>
 
         </nav>
         <article class="editor">

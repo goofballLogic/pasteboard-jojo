@@ -1,8 +1,8 @@
 import "./integration-api.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
-import { noteAdded, noteModified, receive } from "./bus.js";
-import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata } from "./board.js";
+import { noteAdded, noteDeleted, noteModified, receive } from "./bus.js";
+import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata, deleteNote } from "./board.js";
 import { listDisplays } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
@@ -171,6 +171,7 @@ function render() {
 
         receive(noteModified, noteModifiedHandler());
         receive(noteAdded, noteAddedHandler());
+        receive(noteDeleted, noteDeletedHandler());
         window.addEventListener("popstate", render);
         const container = document.body;
         registerListeners(container);
@@ -234,6 +235,19 @@ function noteModifiedHandler() {
     return async eventData => {
         try {
             modifyNote(model.board, eventData);
+            aggregateEvents(model.board);
+            await saveToStore(model.board);
+            updateEditor(document.querySelector("main"), main(model));
+        } catch (err) {
+            renderError(err.message);
+        }
+    }
+}
+
+function noteDeletedHandler() {
+    return async eventData => {
+        try {
+            deleteNote(model.board, eventData);
             aggregateEvents(model.board);
             await saveToStore(model.board);
             updateEditor(document.querySelector("main"), main(model));

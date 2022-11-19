@@ -1,4 +1,4 @@
-import { noteAdded, noteDeleted, noteModified, send } from "./bus.js";
+import { noteAdded, noteDeleted, noteModified, noteSentToFront, noteSentToBack, send } from "./bus.js";
 
 const body = document.querySelector("body");
 const bodyObserver = new MutationObserver((mutationList) => {
@@ -39,6 +39,10 @@ function initialiseEditor(main) {
     updateSelectionDisplay();
 
     const menuSurface = main.querySelector("nav.editor");
+    menuSurface.querySelector("button.send-to-front-note").addEventListener("click", e =>
+        selectionState.id && send(noteSentToFront, { id: selectionState.id }));
+    menuSurface.querySelector("button.send-to-back-note").addEventListener("click", e =>
+        selectionState.id && send(noteSentToBack, { id: selectionState.id }));
     menuSurface.querySelector("button.delete-note").addEventListener("click", e =>
         selectionState.id && send(noteDeleted, { id: selectionState.id }));
     menuSurface.querySelector("button.fit")?.addEventListener("click", e =>

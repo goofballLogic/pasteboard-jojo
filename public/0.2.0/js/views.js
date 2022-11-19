@@ -253,6 +253,9 @@ function board(model) {
             <hr />
             Note:<br />
             <button class="editor delete-note">Delete note ⚠</button>
+            <hr />
+            <button class="editor send-to-front-note">Front &nearr;</button>
+            <button class="editor send-to-back-note">Back &swarr;</button>
 
         </nav>
         <article class="editor">

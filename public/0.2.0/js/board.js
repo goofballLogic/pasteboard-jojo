@@ -34,6 +34,17 @@ function processComponentEvent(board, boardEventName, id, eventData, component) 
             component.content = component.content || {};
             component.content.text = eventData.content.text;
         }
+        if ("zIndex" in eventData && eventData.zIndex !== component.zIndex) {
+            mergeData.zIndex = eventData.zIndex;
+            component.zIndex = mergeData.zIndex;
+        }
+
+    }
+    if (!("zIndex" in component)) {
+
+        const zIndexes = Object.values(board.data.notes).filter(n => "zIndex" in n).map(n => n.zIndex).filter(x => x);
+        component.zIndex = (Math.max(...zIndexes) || 0) + 1;
+        mergeData.zIndex = component.zIndex;
 
     }
     board.events = board.events || [];
@@ -89,17 +100,48 @@ export function deleteNote(board, eventData) {
     }
 }
 
+export function sendNoteToBack(board, eventData) {
+    try {
+        const noteId = ensureNoteId(eventData);
+        const notes = ensureNotes(board, noteId);
+        const note = ensureNote(notes, noteId);
+        const zIndex = Math.min(...Object.values(notes).map(n => n.zIndex || 0)) - 1;
+        console.log("Set to b", zIndex);
+        processComponentEvent(board, "merge-note", noteId, { zIndex }, note);
+    } catch (err) {
+        throw new Error(`Failed to update modified note (BSNTB-${err.message})`);
+    }
+}
+
+export function sendNoteToFront(board, eventData) {
+    try {
+        const noteId = ensureNoteId(eventData);
+        const notes = ensureNotes(board, noteId);
+        const note = ensureNote(notes, noteId);
+        const zIndex = Math.max(...Object.values(notes).map(n => n.zIndex || 0)) + 1;
+        console.log("Set to f", zIndex);
+        processComponentEvent(board, "merge-note", noteId, { zIndex }, note);
+    } catch (err) {
+        throw new Error(`Failed to update modified note (BSNTF-${err.message})`);
+    }
+}
+
 export function modifyNote(board, eventData) {
     try {
         const noteId = ensureNoteId(eventData);
         const notes = ensureNotes(board, noteId);
-        const note = notes[noteId];
-        if (!note)
-            throw new Error(`NN:${noteId})`);
+        const note = ensureNote(notes, noteId);
         processComponentEvent(board, "merge-note", noteId, eventData, note);
     } catch (err) {
         throw new Error(`Failed to update modified note (BMN-${err.message})`);
     }
+}
+
+function ensureNote(notes, noteId) {
+    const note = notes[noteId];
+    if (!note)
+        throw new Error(`NN:${noteId})`);
+    return note;
 }
 
 function ensureNotes(board, noteId) {
@@ -150,6 +192,7 @@ export function aggregateEvents(board) {
         if (Array.isArray(board.events) && board.events.length) {
             board.events = board.events.reduce((agg, evt) => {
                 const target = agg.find(x => x.id === evt.id) || {};
+                console.log(target, evt);
                 merge(target, evt);
                 return [...agg, target];
             }, []);

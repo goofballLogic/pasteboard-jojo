@@ -2,7 +2,7 @@ import "./integration-api.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./bus.js";
-import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata, deleteNote, sendNoteToBack, sendNoteToFront } from "./board.js";
+import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata, deleteNote, sendNoteToBack, sendNoteToFront } from "./board.js";
 import { listDisplays, createDisplay, assignDisplay } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
@@ -44,7 +44,7 @@ const eventHandlers = [
 
         } catch (err) {
 
-            console.log(err);
+            console.error(err);
             renderError("An error occurred creating the display (MND-CD)");
 
         }
@@ -67,7 +67,7 @@ const eventHandlers = [
 
         } catch (err) {
 
-            console.log(err);
+            console.error(err);
             renderError("An error occurred creating the board (MNB-CB)");
 
         }
@@ -84,32 +84,7 @@ const eventHandlers = [
 
         e.preventDefault();
         const { next: nextBoardId, display_id: displayId } = Object.fromEntries(new FormData(form).entries());
-        //model.boards = model.boards || {};
         await assignDisplay({ id: displayId, boardId: nextBoardId });
-        // if (nextBoardId) {
-
-        //     if (!(nextBoardId in model.boards))
-        //         model.boards[nextBoardId] = {};
-        //     const nextBoard = model.boards[nextBoardId];
-        //     if (!await getBoardData(nextBoard, nextBoardId))
-        //         return; // an error occurred
-        //     try {
-        //         disableDisplay(nextBoard, displayId);
-        //         aggregateEvents(nextBoard);
-        //         await saveToStore(nextBoard);
-        //         enableDisplay(nextBoard, displayId);
-        //         aggregateEvents(nextBoard);
-        //         await saveToStore(nextBoard);
-        //     } catch (err) {
-        //         console.error(err);
-        //         renderError(err.message);
-        //     }
-
-        // } else {
-
-
-
-        // }
 
     }]
 
@@ -139,8 +114,6 @@ async function renderMain() {
     await updateModelFromURL();
     await updateModelFromBoardId();
     await updateModelFromMode();
-
-    console.log(model);
 
     const doc = domParser.parseFromString(main(model), "text/html");
     const rendered = doc.body.querySelector("main");

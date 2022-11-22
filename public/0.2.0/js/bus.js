@@ -15,7 +15,6 @@ const messages = {
 export function send(messageType, detail) {
     const eventName = lookup(messageType);
     document.dispatchEvent(new CustomEvent(eventName, { detail }));
-    console.log("Sent", eventName, detail);
 }
 
 export function receive(messageType, callback) {

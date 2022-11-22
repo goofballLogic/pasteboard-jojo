@@ -26,9 +26,7 @@ function asKeys(obj) {
 
 export async function keywiseUpdate(ref, patch) {
 
-    console.log(patch);
     const keywisePatch = decorateDeletions(Object.fromEntries(asKeys(patch)));
-    console.log(keywisePatch);
     await withPending(() => ref.update(keywisePatch), "Saving...");
 
 }

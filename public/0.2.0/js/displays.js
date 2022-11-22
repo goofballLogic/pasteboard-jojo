@@ -8,7 +8,6 @@ export async function createDisplay({ name }) {
 export async function assignDisplay({ id, boardId }) {
     const ref = displays.doc(id);
     boardId = boardId || deleteFieldValue;
-    console.log("Setting", id, boardId);
     await ref.set({ board: { id: boardId } }, { merge: true });
 }
 

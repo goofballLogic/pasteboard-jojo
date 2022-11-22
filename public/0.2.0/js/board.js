@@ -71,12 +71,6 @@ export async function saveToStore(board) {
         addNoteEventToPatch(evt["add-note"], evt);
         addNoteEventToPatch(evt["merge-note"], evt);
         addNoteEventToPatch(evt["delete-note"], evt);
-        if ("enable-display" in evt) {
-            displays[evt.id] = { show: true };
-        }
-        if ("disable-display" in evt) {
-            displays[evt.id] = undefined;
-        }
     }
     await keywiseUpdate(board.ref, patch);
 
@@ -106,7 +100,6 @@ export function sendNoteToBack(board, eventData) {
         const notes = ensureNotes(board, noteId);
         const note = ensureNote(notes, noteId);
         const zIndex = Math.min(...Object.values(notes).map(n => n.zIndex || 0)) - 1;
-        console.log("Set to b", zIndex);
         processComponentEvent(board, "merge-note", noteId, { zIndex }, note);
     } catch (err) {
         throw new Error(`Failed to update modified note (BSNTB-${err.message})`);
@@ -119,7 +112,6 @@ export function sendNoteToFront(board, eventData) {
         const notes = ensureNotes(board, noteId);
         const note = ensureNote(notes, noteId);
         const zIndex = Math.max(...Object.values(notes).map(n => n.zIndex || 0)) + 1;
-        console.log("Set to f", zIndex);
         processComponentEvent(board, "merge-note", noteId, { zIndex }, note);
     } catch (err) {
         throw new Error(`Failed to update modified note (BSNTF-${err.message})`);
@@ -158,21 +150,6 @@ function ensureNoteId(eventData) {
     if (!noteId)
         throw new Error("NID");
     return noteId;
-}
-
-export function disableDisplay(board, displayId) {
-    if (board?.data && board.data.displays && (displayId in board.data.displays)) {
-        delete board.data.displays[displayId];
-    }
-    processComponentEvent(board, "disable-display", displayId);
-}
-
-export function enableDisplay(board, displayId) {
-    if (!(board?.data))
-        throw new Error("Failed to enable display (BED-NBD)");
-    const displays = board.data.displays = board.data.displays || {};
-    displays[displayId] = { scheduled: Date.now() };
-    processComponentEvent(board, "enable-display", displayId);
 }
 
 export function addNote(board, eventData) {

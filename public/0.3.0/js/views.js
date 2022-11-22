@@ -139,6 +139,11 @@ function display(model, displayModel) {
                 <dt>Display id</dt><dd>${id}</dd>
                 <dt>Connection URL</dt><dd>${href}</dd>
 
+                <form class="delete-display">
+                    <input type="hidden" name="name" value="${name}" />
+                    <input type="hidden" name="id" value="${id}" />
+                    <button>Unregister and delete</button>
+                </form>
 
             </div>
             ${!err ? "" : `

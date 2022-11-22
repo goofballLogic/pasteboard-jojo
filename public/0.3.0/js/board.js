@@ -169,7 +169,6 @@ export function aggregateEvents(board) {
         if (Array.isArray(board.events) && board.events.length) {
             board.events = board.events.reduce((agg, evt) => {
                 const target = agg.find(x => x.id === evt.id) || {};
-                console.log(target, evt);
                 merge(target, evt);
                 return [...agg, target];
             }, []);

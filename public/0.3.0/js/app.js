@@ -3,7 +3,7 @@ import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./bus.js";
 import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata, deleteNote, sendNoteToBack, sendNoteToFront } from "./board.js";
-import { listDisplays, createDisplay, assignDisplay } from "./displays.js";
+import { listDisplays, createDisplay, assignDisplay, deleteDisplay } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
 import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "../../integration.js";
@@ -50,7 +50,18 @@ const eventHandlers = [
         }
 
     }],
-    ["new-board", (form) => async e => {
+    ["delete-display", form => async e => {
+
+        e.preventDefault();
+        const data = new FormData(form);
+        const id = data.get("id");
+        const name = data.get("name");
+        if (!id) return;
+        if (confirm(`Are you sure you want to delete display ${name} (${id})?`))
+            await deleteDisplay(id);
+
+    }],
+    ["new-board", form => async e => {
 
         e.preventDefault();
         const data = new FormData(form);

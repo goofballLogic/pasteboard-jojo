@@ -11,6 +11,11 @@ export async function assignDisplay({ id, boardId }) {
     await ref.set({ board: { id: boardId } }, { merge: true });
 }
 
+export async function deleteDisplay(id) {
+    const ref = displays.doc(id);
+    await ref.delete();
+}
+
 export async function listDisplays(model) {
     if (!model.user?.uid) return [];
     const writeable = await storage.ref(`displays/${model.user.uid}`).listAll();

@@ -82,7 +82,5 @@ ul.displays li.error::before {
 }
 
 ul.displays li.dead::before {
-    background: radial-gradient(#FFF 0%, #AAA 20%, #000 70%);
-
-
+    box-shadow: inset 0 0 4px 0 black;
 }

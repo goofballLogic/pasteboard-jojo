@@ -20,6 +20,15 @@ service cloud.firestore {
     match /board_metadata/{boardId} {
       allow read: if request.auth != null && isBoardAccessible(boardId)
     }
+    function isDisplayAdministrable(displayId) {
+      return displayId.split("_")[0]==request.auth.uid
+    }
+    match /displays/{displayId} {
+      allow create, read, update, delete: if
+        request.auth != null
+        &&
+        isDisplayAdministrable(displayId)
+    }
 
   }
 }

@@ -3,7 +3,7 @@ import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./bus.js";
 import { addNote, aggregateEvents, disableDisplay, enableDisplay, loadFromStore, modifyNote, saveToStore, fetchBoardMetadata, deleteNote, sendNoteToBack, sendNoteToFront } from "./board.js";
-import { listDisplays } from "./displays.js";
+import { listDisplays, createDisplay, assignDisplay } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
 import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "../../integration.js";
@@ -29,9 +29,25 @@ const eventHandlers = [
         }
 
     }],
-    ["sign-out", () => async () => {
+    ["sign-out", () => signOut],
+    ["new-display", (form) => async e => {
 
-        await signOut();
+        e.preventDefault();
+        const data = new FormData(form);
+        const display = {
+            name: data.get("name")
+        };
+        try {
+
+            await createDisplay(display);
+            renderMain();
+
+        } catch (err) {
+
+            console.log(err);
+            renderError("An error occurred creating the display (MND-CD)");
+
+        }
 
     }],
     ["new-board", (form) => async e => {
@@ -52,7 +68,7 @@ const eventHandlers = [
         } catch (err) {
 
             console.log(err);
-            renderError("An error occurred creating the board");
+            renderError("An error occurred creating the board (MNB-CB)");
 
         }
 
@@ -67,23 +83,33 @@ const eventHandlers = [
     ["schedule", (form) => async e => {
 
         e.preventDefault();
-        const { next, state } = Object.fromEntries(new FormData(form).entries());
-        model.boards = model.boards || {};
-        if (next) {
+        const { next: nextBoardId, display_id: displayId } = Object.fromEntries(new FormData(form).entries());
+        //model.boards = model.boards || {};
+        await assignDisplay({ id: displayId, boardId: nextBoardId });
+        // if (nextBoardId) {
 
-            if (!(next in model.boards))
-                model.boards[next] = {};
-            const board = model.boards[next];
-            if (!await getBoardData(board, next))
-                return; // an error occurred
-            disableDisplay(board, state);
-            aggregateEvents(board);
-            await saveToStore(board);
-            enableDisplay(board, state);
-            aggregateEvents(board);
-            await saveToStore(board);
+        //     if (!(nextBoardId in model.boards))
+        //         model.boards[nextBoardId] = {};
+        //     const nextBoard = model.boards[nextBoardId];
+        //     if (!await getBoardData(nextBoard, nextBoardId))
+        //         return; // an error occurred
+        //     try {
+        //         disableDisplay(nextBoard, displayId);
+        //         aggregateEvents(nextBoard);
+        //         await saveToStore(nextBoard);
+        //         enableDisplay(nextBoard, displayId);
+        //         aggregateEvents(nextBoard);
+        //         await saveToStore(nextBoard);
+        //     } catch (err) {
+        //         console.error(err);
+        //         renderError(err.message);
+        //     }
 
-        }
+        // } else {
+
+
+
+        // }
 
     }]
 
@@ -101,7 +127,7 @@ export let model = { loading: true };
 
 export const domParser = new DOMParser();
 
-function renderNav(app) {
+function renderNav() {
     const doc = domParser.parseFromString(nav(model), "text/html");
     const rendered = doc.body.querySelector("nav");
     document.querySelector("body > nav").replaceWith(rendered);
@@ -110,27 +136,33 @@ function renderNav(app) {
 
 async function renderMain() {
     model.error = null;
-    buildState();
-    await buildMainModel();
+    await updateModelFromURL();
+    await updateModelFromBoardId();
+    await updateModelFromMode();
+
+    console.log(model);
+
     const doc = domParser.parseFromString(main(model), "text/html");
     const rendered = doc.body.querySelector("main");
     document.querySelector("body > main").replaceWith(rendered);
     registerListeners(rendered);
 }
 
-async function buildMainModel() {
+async function updateModelFromBoardId() {
     const boardId = model.state.board;
     if (boardId) {
         model.board = (model.boards && model.boards[boardId]) || {};
         const board = model.board;
         await getBoardData(board, boardId);
     }
+}
+
+async function updateModelFromMode() {
     if (model.state.mode === "displays") {
 
         model.displays = await listDisplays(model);
 
     }
-
 }
 
 async function getBoardData(board, boardId) {
@@ -145,7 +177,7 @@ async function getBoardData(board, boardId) {
     return board.data;
 }
 
-function buildState() {
+async function updateModelFromURL() {
     const url = new URL(location.href);
     model.state = {};
     if (url.searchParams.has("board"))

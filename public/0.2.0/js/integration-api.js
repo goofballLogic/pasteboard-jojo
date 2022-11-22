@@ -13,8 +13,10 @@ import {
 
 verifyAPI("fetchUserContext", functions, "function", "functions");
 verifyAPI("createBoard", functions, "function", "functions");
+verifyAPI("createDisplay", functions, "function", "functions");
 verifyAPI("boardMetadata", collections, "object", "collections");
 verifyAPI("boards", collections, "object", "collections");
+verifyAPI("displays", collections, "object", "collections");
 
 function verifyAPI(key, container, typename, path) {
 

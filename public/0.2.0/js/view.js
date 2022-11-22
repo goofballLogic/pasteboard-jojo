@@ -2,8 +2,8 @@ import { renderBoardDisplay } from "./display-render.js";
 import { storage, getBytes } from "../../integration.js";
 
 const state = location.search.substring(1).split("_");
-const storageRef = storage.ref(["displays", ...state].join("/"));
-const configRef = storage.ref(["config", ...state].join("/"));
+const commandRef = storage.ref(["displays", ...state].join("/"));
+const requestRef = storage.ref(["config", ...state].join("/"));
 const sessionId = `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`;
 const decoder = new TextDecoder();
 let geoData = null;
@@ -13,7 +13,6 @@ async function ping() {
     const metadata = {
         customMetadata: {
             ...(await ensureGeoData()),
-            state: state.join("_"),
             sessionId: btoa(sessionId)
         }
     };
@@ -23,11 +22,12 @@ async function ping() {
         metadata.customMetadata.boardId = config.id;
         document.body.innerHTML = renderBoardDisplay(config);
         document.title = config?.name || "Awaiting configuration";
+        delete metadata.customMetadata.err;
     } catch (err) {
         metadata.customMetadata.err = err.message;
     }
 
-    await storageRef.putString("", "raw", metadata);
+    await commandRef.putString("", "raw", metadata);
 
 
 };
@@ -36,9 +36,9 @@ ping();
 setInterval(ping, 1000 * 5);
 
 async function parseConfig() {
-    const bytes = await getBytes(configRef)
+    const bytes = await getBytes(requestRef)
     const rawConfig = decoder.decode(bytes);
-    return JSON.parse(rawConfig);
+    return rawConfig && JSON.parse(rawConfig);
 }
 
 async function ensureGeoData() {
@@ -55,7 +55,7 @@ async function ensureGeoData() {
 
         } catch (_) {
 
-            geoData = {};
+            geoData = null;
 
         }
 

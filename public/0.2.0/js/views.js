@@ -76,20 +76,20 @@ function mainLoggedIn(model) {
 
 function displays(model) {
 
-    const url = new URL(location.href);
-    url.search = `${model.user.uid}_${Date.now()}`;
-    url.pathname = url.pathname.replace("/app", "/view");
-
     return `
 
-    <a target="_blank" href="${url.href}">View</a>
     <ul class="displays">
 
         ${model.displays.length
             ? model.displays.map(displayModel => display(model, displayModel)).join("")
             : "No displays registered"}
     </ul>
+    <form class="new-display">
 
+        <input name="name" value="Jo Jo scary" />
+        <button>Create</button>
+
+    </form>
 
     `;
 
@@ -108,11 +108,14 @@ const MINUTE = 60;
 const HOUR = MINUTE * 60;
 const DAY = HOUR * 24;
 
+const healthy = MINUTE * 1;
+const weak = MINUTE * 2;
+
 function display(model, displayModel) {
 
-    const { health, updated, config } = displayModel;
-    const { ip, city, region, country, state, sessionId } = health;
-    const [, identifier] = state?.split("_") || [];
+    const { health = {}, updated, config = {}, id, href } = displayModel;
+    const { ip, city, region, country, sessionId, err } = health;
+    const { name } = config;
     const [connected] = decode(sessionId, "?")?.split("_");
 
     const updatedAgo = ago(updated);
@@ -120,27 +123,40 @@ function display(model, displayModel) {
     const showing = model.boards && model.boards[health?.boardId]?.metadata;
     const configured = model.boards && model.boards[config?.boardId]?.metadata;
 
-    return `<li class="${updatedAgo.age <= MINUTE * 2 ? "healthy" : updatedAgo.age <= MINUTE * 4 ? "weak" : "dead"}">
-
+    const status = err ? "error" : updatedAgo.age < healthy ? "healthy" : updatedAgo.age < weak ? "weak" : "dead";
+    return `<li class="${status}">
 
         <details>
 
-            <summary>Unrecognised (${identifier}) - currently showing: ${showing?.name ?? "(None)"}</summary>
+            <summary>${name || "Unrecognised"} - currently showing: ${showing?.name ?? "(None)"}</summary>
             <div>
 
-                <dt>Last ping</dt><dd>${updatedAgo.description} ago</dd>
+                <dt>Updated</dt><dd>${updatedAgo.description} ago</dd>
                 <dt>Connected</td><dd>${connectedAgo.description} ago</dd>
                 <dt>IP</dt><dd>${ip}</dd>
                 <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
                 <dt>Session</dt><dd>${sessionId}</dd>
+                <dt>Display id</dt><dd>${id}</dd>
+                <dt>Connection URL</dt><dd>${href}</dd>
+
 
             </div>
+            ${!err ? "" : `
+
+                <aside class="error">
+
+                    <header>Error</header>
+                    ${err}
+
+                </aside>
+
+            `}
             <form class="schedule">
 
-                <input type="hidden" name="state" value="${state}" />
+                <input type="hidden" name="display_id" value="${id}" />
                 Choose board to display: <select name="next">
 
-                    <option>None</option>
+                    <option value="">None</option>
                     ${model.boards && Object.values(model.boards).map(b => `
                         <option value="${b.metadata?.id}">${b.metadata?.name}</option>
                     `).join("")}

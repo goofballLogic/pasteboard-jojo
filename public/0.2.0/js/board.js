@@ -40,7 +40,7 @@ function processComponentEvent(board, boardEventName, id, eventData, component) 
         }
 
     }
-    if (!("zIndex" in component)) {
+    if (component && !("zIndex" in component)) {
 
         const zIndexes = Object.values(board.data.notes).filter(n => "zIndex" in n).map(n => n.zIndex).filter(x => x);
         component.zIndex = (Math.max(...zIndexes) || 0) + 1;
@@ -161,7 +161,7 @@ function ensureNoteId(eventData) {
 }
 
 export function disableDisplay(board, displayId) {
-    if (board?.data && board.data.displays && displayId in board.data.displays) {
+    if (board?.data && board.data.displays && (displayId in board.data.displays)) {
         delete board.data.displays[displayId];
     }
     processComponentEvent(board, "disable-display", displayId);

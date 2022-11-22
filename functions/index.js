@@ -1,35 +1,53 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { getStorage } = require("firebase-admin/storage");
-const { getFirestore, FieldValue, FieldPath } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const app = admin.initializeApp();
+const storageBucket = getStorage(app).bucket();
 
 exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").onWrite(async (change, context) => {
     const afterDisplays = Object.keys(change.after.data().displays || {});
+    const beforeDisplays = Object.keys(change.before.data().displays || {});
     const { boardId } = context.params;
     const payload = JSON.stringify(change.after.data());
-    const bucket = getStorage(app).bucket();
 
-    console.log("Board changed", boardId, change.before.data(), change.after.data());
     for (const displayId of afterDisplays) {
 
-        console.log(`Setting ${displayId} to board ${boardId}`);
+        console.log(`Board change: Setting ${displayId} to board ${boardId}`);
         await removeDisplayFromBoards(displayId, boardId);
-        const dataFile = bucket.file(`config/${displayId.replace("_", "/")}`);
-        await dataFile.save(payload);
-        await dataFile.setMetadata({ metadata: { boardId } });
+        const metadata = { boardId };
+        await configureDisplay(displayId, payload, metadata);
 
     }
+    for (const displayId of beforeDisplays.filter(id => !afterDisplays.includes(id))) {
 
+        console.log(`Board change: Removing ${displayId} from board ${boardId}`);
+        await removeDisplayFromBoards(displayId, boardId);
+        const metadata = {};
+        await configureDisplay(displayId, null, metadata);
+
+    }
 });
 
-// exports.test = functions.https.onCall(async () => {
+exports.handleDisplayChange = functions.firestore.document("/displays/{displayId}").onWrite(async (change, context) => {
 
-//     const displayId = "bYnRbsVC6WQd2Avwfjd6cS9TM1L2_EX3xsA8KajOF3OV2AWwu";
-//     await removeDisplayFromBoards(displayId);
-
-// });
+    const { displayId } = context.params;
+    const after = change.after.data();
+    const before = change.before.data();
+    const isNone = !(after.board?.id);
+    if (isNone && before.board?.id) {
+        console.log("Display change: Removing display", displayId, "from board", before.board.id);
+        await getFirestore(app).collection("boards").doc(before.board.id).set({
+            displays: { [displayId]: FieldValue.delete() }
+        }, { merge: true });
+    } else if (!isNone) {
+        console.log("Display change: Adding display", displayId, "to board", after.board.id);
+        await getFirestore(app).collection("boards").doc(after.board.id).set({
+            displays: { [displayId]: { show: true } }
+        }, { merge: true });
+    }
+});
 
 exports.fetchUserContext = functions.https.onCall(async (data, context) => {
 
@@ -79,6 +97,23 @@ exports.createBoard = functions.https.onCall(async (payloadData, context) => {
 
     return await fetchUserMetadata(uid);
 });
+
+exports.createDisplay = functions.https.onCall(async (payloadData, context) => {
+
+    const uid = context.auth?.uid;
+    if (!uid) { throw new Error("Not authenticated"); }
+    const { name } = payloadData;
+    if (!name) throw new Error("No name specified");
+    const displayId = `${uid}_${Math.random().toString().substring(2)}Z${Date.now()}`;
+    await configureDisplay(displayId, null, { name });
+
+});
+
+async function configureDisplay(displayId, content, metadata) {
+    const dataFile = storageBucket.file(`config/${displayId.replace("_", "/")}`);
+    await dataFile.save(content);
+    await dataFile.setMetadata({ metadata });
+}
 
 async function removeDisplayFromBoards(displayId, excludedBoardId) {
     let query = getFirestore(app)

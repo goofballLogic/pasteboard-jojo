@@ -39,5 +39,5 @@ article.editor {
 }
 
 article.editor .note.selected {
-    outline: solid 10px #07F7;
+    box-shadow: 3px 3px 3px 0 silver, 0 0 0px 20px #0001;
 }

@@ -83,10 +83,11 @@ function displays(model) {
         ${model.displays.length
             ? model.displays.map(displayModel => display(model, displayModel)).join("")
             : "No displays registered"}
+
     </ul>
     <form class="new-display">
 
-        <input name="name" value="Jo Jo scary" />
+        <input name="name" value="" placeholder="Display name" />
         <button>Create</button>
 
     </form>
@@ -138,11 +139,12 @@ function display(model, displayModel) {
                 <dt>Session</dt><dd>${sessionId}</dd>
                 <dt>Display id</dt><dd>${id}</dd>
                 <dt>Connection URL</dt><dd>${href}</dd>
-
                 <form class="delete-display">
+
                     <input type="hidden" name="name" value="${name}" />
                     <input type="hidden" name="id" value="${id}" />
                     <button>Unregister and delete</button>
+
                 </form>
 
             </div>
@@ -163,16 +165,18 @@ function display(model, displayModel) {
 
                     <option value="">None</option>
                     ${model.boards && Object.values(model.boards).map(b => `
+
                         <option value="${b.metadata?.id}">${b.metadata?.name}</option>
+
                     `).join("")}
 
                 </select>
                 <button>Schedule</button>
                 ${configured ? `Currently scheduled: ${configured.name}` : ""}
+
             </form>
 
         </details>
-
 
     </li>`;
 

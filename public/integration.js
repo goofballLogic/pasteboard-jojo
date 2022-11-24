@@ -23,7 +23,7 @@ export const getBytes = s.getBytes;
 export const functions = {
     fetchUserContext: httpsCallable("fetchUserContext"),
     createBoard: httpsCallable("createBoard"),
-    createDisplay: httpsCallable("createDisplay")
+    createDisplay: httpsCallable("createDisplay"),
 };
 
 const firestore = app.firestore();
@@ -34,3 +34,5 @@ export const collections = {
 };
 
 export const deleteFieldValue = firebase.firestore.FieldValue.delete();
+
+console.log("Integration loaded");

@@ -6,7 +6,10 @@ import { addNote, aggregateEvents, loadFromStore, modifyNote, saveToStore, fetch
 import { listDisplays, createDisplay, assignDisplay, deleteDisplay } from "./displays.js";
 import { fetchUserContext, createBoard } from "./server.js";
 import { renderError } from "./status.js";
-import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "../../integration.js";
+import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, collections, signOut } from "../../integration.js";
+import { generateName } from "./nouns.js";
+
+console.log(generateName());
 
 async function googleSignIn() {
     await signInWithPopup(googleAuthProvider);
@@ -22,24 +25,26 @@ const eventHandlers = [
     ["sign-in", (target) => {
 
         const authStrategy = target.classList.contains("google") ? googleSignIn : emailSignIn;
-        return async function signIn() {
-
-            await authStrategy();
-
-        }
+        return async function signIn() { await authStrategy(); }
 
     }],
     ["sign-out", () => signOut],
     ["new-display", (form) => async e => {
 
         e.preventDefault();
-        const data = new FormData(form);
-        const display = {
-            name: data.get("name")
-        };
         try {
 
-            await createDisplay(display);
+            const data = new FormData(form);
+            const name = data.get("name");
+            const accountId = model.user.uid;
+            const displaysRef = collections.displays.doc(accountId);
+            const displaysSnapshot = await displaysRef.get();
+            const existing = displaysSnapshot.data() ?? {};
+            let displayId = generateName();
+            while (displayId in existing)
+                displayId = generateName();
+            await displaysRef.set({ [displayId]: { name } }, { merge: true });
+            //await createDisplay({ accountId, name });
             renderMain();
 
         } catch (err) {
@@ -95,7 +100,11 @@ const eventHandlers = [
 
         e.preventDefault();
         const { next: nextBoardId, display_id: displayId } = Object.fromEntries(new FormData(form).entries());
-        await assignDisplay({ id: displayId, boardId: nextBoardId });
+        await assignDisplay({
+            id: displayId,
+            accountId: model.user.uid,
+            boardId: nextBoardId
+        });
 
     }]
 
@@ -144,8 +153,8 @@ async function updateModelFromBoardId() {
 async function updateModelFromMode() {
     if (model.state.mode === "displays") {
 
-        model.displays = await listDisplays(model);
-
+        model.displays = await listDisplays({ accountId: model.user?.uid });
+        console.log(model);
     }
 }
 

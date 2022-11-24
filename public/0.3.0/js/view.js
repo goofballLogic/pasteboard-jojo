@@ -1,65 +1,66 @@
 import { renderBoardDisplay } from "./display-render.js";
-import { storage, getBytes } from "../../integration.js";
+import { viewerConfig } from "../../view-config.js";
 
-const state = location.search.substring(1).split("_");
-const commandRef = storage.ref(["displays", ...state].join("/"));
-const requestRef = storage.ref(["config", ...state].join("/"));
-const sessionId = `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`;
-const decoder = new TextDecoder();
-let geoData = null;
+const viewerConfigURL = new URL(viewerConfig);
+viewerConfigURL.search = location.search;
+
+const context = {
+    sessionId: `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`
+};
+
+const PING_INTERVAL = 1000 * 5;
 
 async function ping() {
 
-    const metadata = {
-        customMetadata: {
-            ...(await ensureGeoData()),
-            sessionId: btoa(sessionId)
+    await ensureContextData();
+    const config = await fetchConfig();
+    if (!(config.board === context.board && config.version === context.version)) {
+
+        if ("data" in config) {
+
+            document.body.innerHTML = renderBoardDisplay(config.data);
+
         }
-    };
-
-    try {
-        const config = await parseConfig();
-        metadata.customMetadata.boardId = config.id;
-        document.body.innerHTML = renderBoardDisplay(config);
         document.title = config?.name || "Awaiting configuration";
-        delete metadata.customMetadata.err;
-    } catch (err) {
-        metadata.customMetadata.err = err.message;
+        context.board = config.board;
+        context.version = config.version;
+
     }
-
-    await commandRef.putString("", "raw", metadata);
-
 
 };
 
 ping();
-setInterval(ping, 1000 * 5);
+setInterval(ping, PING_INTERVAL);
 
-async function parseConfig() {
-    const bytes = await getBytes(requestRef)
-    const rawConfig = decoder.decode(bytes);
-    return rawConfig && JSON.parse(rawConfig);
+async function fetchConfig() {
+    const resp = await fetch(
+        viewerConfigURL.href,
+        { method: "POST", body: JSON.stringify(context), headers: { "Content-Type": "application/json" } }
+    );
+    return await resp.json();
 }
 
-async function ensureGeoData() {
+async function ensureContextData() {
 
-    if (!geoData) {
+    if (!context.ip) {
 
         try {
 
             const resp = await fetch("https://ipapi.co/json");
             if (resp.ok) {
+
                 const { ip, city, region, country_name } = await resp.json();
-                geoData = { ip, city, region, country: country_name };
+                Object.assign(context, { ip, city, region, country_name });
+
             }
 
         } catch (_) {
 
-            geoData = null;
+            context = null;
 
         }
 
     }
-    return geoData;
+    return context;
 
 }

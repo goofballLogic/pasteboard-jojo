@@ -8,8 +8,13 @@
     ],
     "redirects": [
       {
-        "source": "/latest/:path*",
-        "destination": "/0.2.0/:path*",
+        "source": "/0.2.0/:rest*",
+        "destination": "/latest/:rest*",
+        "type": 302
+      },
+      {
+        "source": "/latest/:rest*",
+        "destination": "/0.3.0/:rest*",
         "type": 302
       }
     ],
@@ -47,7 +52,7 @@
     "hosting": {
       "port": 5000
     },
-    "storage": {
+    "_storage": {
       "port": 9199
     },
     "ui": {
@@ -58,7 +63,7 @@
       "port": 8080
     }
   },
-  "storage": {
+  "__storage": {
     "rules": "storage.rules"
   },
   "firestore": {

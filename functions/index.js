@@ -1,66 +1,58 @@
 const functions = require("firebase-functions");
+const functionsV2 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
-const { getStorage } = require("firebase-admin/storage");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { handleViewerConfigurationRequest, handleBoardChange, fetchUserMetadata } = require("./pasteboard-integration");
 
 const app = admin.initializeApp();
-const storageBucket = getStorage(app).bucket();
+const firestore = app.firestore();
 
-exports.handleBoardChange = functions.firestore.document("/boards/{boardId}").onWrite(async (change, context) => {
-    const afterDisplays = Object.keys(change.after.data().displays || {});
-    const beforeDisplays = Object.keys(change.before.data().displays || {});
-    const { boardId } = context.params;
-    const payload = JSON.stringify(change.after.data());
+const integration = {
+    displays: firestore.collection("displays"),
+    boards: firestore.collection("boards"),
+    users: firestore.collection("users"),
+    logger: functions.logger
+};
 
-    for (const displayId of afterDisplays) {
+exports.viewerconfig = functionsV2.https.
+    onRequest({ cors: true }, async (req, res) => {
 
-        console.log(`Board change: Setting ${displayId} to board ${boardId}`);
-        await removeDisplayFromBoards(displayId, boardId);
-        const metadata = { boardId };
-        await configureDisplay(displayId, payload, metadata);
+        const url = new URL(req.url, "ftp://yomomma");
+        const viewer = url.search.replace(/^\?/, "");
+        const result = await handleViewerConfigurationRequest({
+            viewer,
+            state: req.body,
+            ...integration
+        });
+        res.send(JSON.stringify(result));
 
-    }
-    for (const displayId of beforeDisplays.filter(id => !afterDisplays.includes(id))) {
+    });
 
-        console.log(`Board change: Removing ${displayId} from board ${boardId}`);
-        await removeDisplayFromBoards(displayId, boardId);
-        const metadata = {};
-        await configureDisplay(displayId, null, metadata);
+exports.handleBoardChange = functions.firestore
+    .document("/boards/{boardId}")
+    .onWrite(async (change, context) => {
 
-    }
-});
+        const { boardId } = context.params;
 
-exports.handleDisplayChange = functions.firestore.document("/displays/{displayId}").onWrite(async (change, context) => {
+        await handleBoardChange({
+            boardId,
+            ...integration
+        });
 
-    const { displayId } = context.params;
-    const after = change.after.data();
-    const before = change.before.data();
-    const isNone = !(after.board?.id);
-    if (isNone && before.board?.id) {
-        console.log("Display change: Removing display", displayId, "from board", before.board.id);
-        await getFirestore(app).collection("boards").doc(before.board.id).set({
-            displays: { [displayId]: FieldValue.delete() }
-        }, { merge: true });
-    } else if (!isNone) {
-        console.log("Display change: Adding display", displayId, "to board", after.board.id);
-        await getFirestore(app).collection("boards").doc(after.board.id).set({
-            displays: { [displayId]: { show: true } }
-        }, { merge: true });
-    }
-});
+    });
 
-exports.fetchUserContext = functions.https.onCall(async (data, context) => {
+exports.fetchUserContext = functions.https
+    .onCall(async (_, context) => {
 
-    const uid = context.auth?.uid;
-    if (!uid) { return null; }
-    const metadata = await fetchUserMetadata(uid);
+        const uid = context.auth?.uid;
+        if (!uid) { return null; }
 
-    return {
-        uid: context.auth?.uid,
-        metadata
-    }
+        const metadata = await fetchUserMetadata({
+            uid,
+            ...integration
+        });
+        return { uid: context.auth?.uid, metadata };
 
-});
+    });
 
 exports.createBoard = functions.https.onCall(async (payloadData, context) => {
 
@@ -78,16 +70,13 @@ exports.createBoard = functions.https.onCall(async (payloadData, context) => {
         throw new Error("Board already exists");
 
     }
-    const metadataDoc = fs.collection("user-metadata").doc(uid);
-    await metadataDoc.set({
-        entitlements: {
-            boards: {
-                [data.id]: {
-                    admin: true
-                }
+    await updateEntitlements(uid, {
+        boards: {
+            [data.id]: {
+                admin: true
             }
         }
-    }, { merge: true });
+    });
 
     functions.logger.info(`User ${uid} creating board ${data.id} ${data.name}`);
 
@@ -95,7 +84,11 @@ exports.createBoard = functions.https.onCall(async (payloadData, context) => {
     await boardMetadataDoc.set(data);
     functions.logger.info(`User ${uid} created board ${data.id} ${data.name}`);
 
-    return await fetchUserMetadata(uid);
+    return await fetchUserMetadata({
+        uid,
+        ...integration
+    });
+
 });
 
 exports.createDisplay = functions.https.onCall(async (payloadData, context) => {
@@ -109,46 +102,15 @@ exports.createDisplay = functions.https.onCall(async (payloadData, context) => {
 
 });
 
-async function configureDisplay(displayId, content, metadata) {
-    const dataFile = storageBucket.file(`config/${displayId.replace("_", "/")}`);
-    await dataFile.save(content);
-    await dataFile.setMetadata({ metadata });
-}
+async function updateEntitlements(uid, entitlementUpdate) {
 
-async function removeDisplayFromBoards(displayId, excludedBoardId) {
-    let query = getFirestore(app)
-        .collection("boards")
-        .where(`displays.${displayId}`, "!=", null);
-    const boards = await query.get();
-    const docs = boards.docs.filter(d => d.id !== excludedBoardId);
-    if (docs.length) {
-        console.log("Removing display", displayId, "from", docs.length, "boards: ", docs.map(d => d.id).join(", "));
-        await Promise.all(docs.map(board => board.ref.update({
-            [`displays.${displayId}`]: FieldValue.delete()
-        })));
-    }
+    const metadataDoc = admin.firestore().collection("user-metadata").doc(uid);
+    await metadataDoc.set({ entitlements: entitlementUpdate }, { merge: true });
+
 }
 
 function parseBoardModel(data) {
     return { id: data?.id, name: data?.name };
 }
 
-async function fetchUserMetadata(uid) {
-    if (!uid) return null;
-    const fs = admin.firestore();
-    const metadataRef = fs.collection("user-metadata").doc(uid);
-    const metadata = (await metadataRef.get()).data() || {};
-    let dirty = false;
-    if (!metadata.groups) {
-        metadata.groups = {};
-        dirty = true;
-    }
-    if (!metadata.entitlements) {
-        metadata.entitlements = {};
-        dirty = true;
-    }
-    if (dirty) {
-        await metadataRef.set(metadata, { merge: true });
-    }
-    return metadata;
-}
+

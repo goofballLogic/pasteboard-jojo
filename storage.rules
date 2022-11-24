@@ -1,12 +1,11 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /displays/{provider}/{display} {
-      allow write: if true;
-      allow read: if request.auth.uid == provider;
-    }
-    match /config/{provider}/{display} {
+    match /outbox/{key}/config {
       allow read: if true;
+    }
+    match /outbox/{key}/content {
+      allow read: if false;
     }
   }
 }

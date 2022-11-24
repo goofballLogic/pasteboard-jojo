@@ -11,3 +11,10 @@ div.note {
     border: solid 1px silver;
     word-wrap: break-word;
 }
+
+div.empty {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    color: #777;
+}

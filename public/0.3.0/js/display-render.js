@@ -1,5 +1,6 @@
 export function renderBoardDisplay(data) {
 
+    if (!data) return `<div class="empty">Awaiting configuration...</div>`;
     return data.notes ? ordered(Object.entries(data.notes)).map(note).join("") : "";
 
 }

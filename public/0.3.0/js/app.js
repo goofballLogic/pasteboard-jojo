@@ -1,12 +1,12 @@
-import "./integration-api.js";
+import "./plumbing/integration-api.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
-import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./bus.js";
+import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./plumbing/bus.js";
 import { listDisplays, assignDisplay, deleteDisplay } from "./displays.js";
-import { renderError, withPending } from "./status.js";
+import { renderError, withPending } from "./plumbing/status.js";
 import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, displays, boards } from "../../integration.js";
-import { generateName } from "./nouns.js";
-import { keywiseUpdate } from "./patching.js";
+import { generateName } from "./plumbing/nouns.js";
+import { keywiseUpdate } from "./plumbing/patching.js";
 
 async function googleSignIn() {
     await signInWithPopup(googleAuthProvider);

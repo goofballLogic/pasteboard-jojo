@@ -1,4 +1,4 @@
-import { errorToast, statusToast } from "./views.js";
+import { errorToast, statusToast } from "../views.js";
 
 export async function withPending(action, message) {
     let toast;

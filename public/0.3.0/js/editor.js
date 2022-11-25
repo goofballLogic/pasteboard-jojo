@@ -1,4 +1,4 @@
-import { noteAdded, noteDeleted, noteModified, noteSentToFront, noteSentToBack, send } from "./bus.js";
+import { noteAdded, noteDeleted, noteModified, noteSentToFront, noteSentToBack, send } from "./plumbing/bus.js";
 
 const body = document.querySelector("body");
 const bodyObserver = new MutationObserver((mutationList) => {

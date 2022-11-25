@@ -18,3 +18,28 @@ div.empty {
     right: 1rem;
     color: #777;
 }
+
+img.empty-placeholder {
+    position: absolute;
+    margin: auto auto;
+    height: 100px;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    opacity: 0.3;
+    animation-name: pulse;
+    animation-iteration-count: infinite;
+    animation-duration: 3s;
+    animation-timing-function: cubic-bezier(1, 0, 0, 1);
+}
+
+@keyframes pulse {
+    from {
+        opacity: 0.5;
+    }
+
+    to {
+        opacity: 0.1;
+    }
+}

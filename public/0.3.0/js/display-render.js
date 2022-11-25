@@ -1,6 +1,9 @@
 export function renderBoardDisplay(data) {
 
-    if (!data) return `<div class="empty">Awaiting configuration...</div>`;
+    if (!data) return `
+        <img class="empty-placeholder" src="./svg/wireless.svg">
+        <div class="empty">Awaiting configuration...</div>
+    `;
     return data.notes ? ordered(Object.entries(data.notes)).map(note).join("") : "";
 
 }

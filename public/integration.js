@@ -7,6 +7,7 @@ import "/__/firebase/init.js?useEmulator=true";
 
 const app = firebase.app();
 
+// auth
 const auth = app.auth();
 export const signInWithEmailAndPassword = auth.signInWithEmailAndPassword.bind(auth);
 export const signInWithPopup = auth.signInWithPopup.bind(auth);
@@ -14,9 +15,11 @@ export const onAuthStateChanged = auth.onAuthStateChanged.bind(auth);
 export const signOut = auth.signOut.bind(auth);
 export const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
 
+// storage
 export const storage = app.storage();
 export const getBytes = s.getBytes;
 
+// firestore
 const firestore = app.firestore();
 export const boards = firestore.collection("boards");
 export const displays = firestore.collection("displays");

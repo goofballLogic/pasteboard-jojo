@@ -77,19 +77,5 @@ async function handleBoardChange({ accountId, boardId, change, boards, displays,
 
 }
 
-
-async function fetchUserMetadata({ uid, users }) {
-
-    const usersRef = users.doc(uid);
-    const usersSnapshot = await usersRef.get();
-    const data = usersSnapshot.exists && usersSnapshot.data() || {};
-    if (!data.entitlements) {
-        data.entitlements = { boards: {}, displays: {} };
-        await usersRef.set({ entitlements: data.entitlements }, { merge: true });
-    }
-    return data;
-}
-
 exports.handleViewerConfigurationRequest = handleViewerConfigurationRequest;
 exports.handleBoardChange = handleBoardChange;
-exports.fetchUserMetadata = fetchUserMetadata;

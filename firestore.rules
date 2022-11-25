@@ -1,40 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isBoardAccessible(boardId) {
-      return request.auth != null
-        &&
-        get(/databases/$(database)/documents/user-metadata/$(request.auth.uid))
-            .data
-            .entitlements
-            .boards[boardId]
-            .admin == true
-    }
-
     function isAccountAccessible(accountId) {
-      return true
-        ||
-        request.auth != null
-        &&
-        request.auth.uid == accountId
+      return request.auth != null && request.auth.uid == accountId
     }
 
     match /users/{userId} {
       allow create, get, update, delete: if
         request.auth != null && request.auth.uid == userId
     }
-    match /boards/{boardId} {
-      allow get, update: if
-        request.auth != null && isBoardAccessible(boardId)
-    }
-    match /board_metadata/{boardId} {
-      allow get: if
-        request.auth != null && isBoardAccessible(boardId)
+    match /boards/{accountId}/{rest=**} {
+      allow create, read, update, delete: if isAccountAccessible(accountId)
     }
     match /displays/{accountId} {
-      allow create, get, update, delete: if
-        isAccountAccessible(accountId)
+      allow create, get, update, delete: if isAccountAccessible(accountId)
     }
   }
 }

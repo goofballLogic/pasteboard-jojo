@@ -7,7 +7,8 @@ async function handleViewerConfigurationRequest({
     boards
 }) {
 
-    const [accountId, displayId] = viewer.split("_");
+    const [accountId, displayId] = Buffer.from(viewer, "base64").toString().split("_");
+
     const ref = displays.doc(accountId);
     const snapshot = await ref.get();
 
@@ -17,15 +18,16 @@ async function handleViewerConfigurationRequest({
     // freshen?
     const data = snapshot.data();
     const config = (data && data[displayId]) || emptyConfig;
+
     if (!(config.board === state.board && config.version === state.version)) {
 
         // board or empty?
         if (config.board) {
 
-            const boardRef = boards.doc(config.board || "unknown");
+            const boardRef = boards.doc(accountId).collection("data").doc(config.board);
             const boardSnapshot = await boardRef.get();
             config.data = boardSnapshot.exists && boardSnapshot.data();
-            config.v = boardSnapshot.exists && boardSnapshot.updateTime.valueOf();
+            config.version = boardSnapshot.exists && boardSnapshot.updateTime.valueOf();
 
         } else {
 
@@ -39,11 +41,21 @@ async function handleViewerConfigurationRequest({
 }
 
 
-async function handleBoardChange({ boardId, displays, logger }) {
+async function handleBoardChange({ accountId, boardId, change, boards, displays, logger }) {
 
-    const [accountId] = boardId.split("_");
     const displaysRef = displays.doc(accountId);
     const displaysSnapshot = await displaysRef.get();
+
+    const beforeName = change.before.data()?.name;
+    const afterName = change.after.data()?.name;
+    if (beforeName !== afterName) {
+
+        await boards.doc(accountId).collection("metadata").doc(boardId).set({
+            id: boardId,
+            name: afterName
+        });
+
+    }
     if (displaysSnapshot.exists) {
 
         const displayPatch = {

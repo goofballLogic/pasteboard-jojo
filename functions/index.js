@@ -28,13 +28,13 @@ exports.viewerconfig = functionsV2.https.
     });
 
 exports.handleBoardChange = functions.firestore
-    .document("/boards/{boardId}")
+    .document("/boards/{accountId}/data/{boardId}")
     .onWrite(async (change, context) => {
 
-        const { boardId } = context.params;
-
         await handleBoardChange({
-            boardId,
+            boardId: context.params.boardId,
+            accountId: context.params.accountId,
+            change,
             ...integration
         });
 
@@ -54,42 +54,42 @@ exports.fetchUserContext = functions.https
 
     });
 
-exports.createBoard = functions.https.onCall(async (payloadData, context) => {
+// exports.createBoard = functions.https.onCall(async (payloadData, context) => {
 
-    const uid = context.auth?.uid;
-    if (!uid) { throw new Error("Not authenticated"); }
+//     const uid = context.auth?.uid;
+//     if (!uid) { throw new Error("Not authenticated"); }
 
-    const data = parseBoardModel(payloadData);
-    data.created = uid;
+//     const data = parseBoardModel(payloadData);
+//     data.created = uid;
 
-    const fs = admin.firestore();
-    const boardDoc = fs.collection("boards").doc(data.id);
-    const boardMetadataDoc = fs.collection("board_metadata").doc(data.id);
-    if (await boardDoc.get().exists) {
+//     const fs = admin.firestore();
+//     const boardDoc = fs.collection("boards").doc(data.id);
+//     const boardMetadataDoc = fs.collection("board_metadata").doc(data.id);
+//     if (await boardDoc.get().exists) {
 
-        throw new Error("Board already exists");
+//         throw new Error("Board already exists");
 
-    }
-    await updateEntitlements(uid, {
-        boards: {
-            [data.id]: {
-                admin: true
-            }
-        }
-    });
+//     }
+//     await updateEntitlements(uid, {
+//         boards: {
+//             [data.id]: {
+//                 admin: true
+//             }
+//         }
+//     });
 
-    functions.logger.info(`User ${uid} creating board ${data.id} ${data.name}`);
+//     functions.logger.info(`User ${uid} creating board ${data.id} ${data.name}`);
 
-    await boardDoc.set(data);
-    await boardMetadataDoc.set(data);
-    functions.logger.info(`User ${uid} created board ${data.id} ${data.name}`);
+//     await boardDoc.set(data);
+//     await boardMetadataDoc.set(data);
+//     functions.logger.info(`User ${uid} created board ${data.id} ${data.name}`);
 
-    return await fetchUserMetadata({
-        uid,
-        ...integration
-    });
+//     return await fetchUserMetadata({
+//         uid,
+//         ...integration
+//     });
 
-});
+// });
 
 exports.createDisplay = functions.https.onCall(async (payloadData, context) => {
 
@@ -104,7 +104,7 @@ exports.createDisplay = functions.https.onCall(async (payloadData, context) => {
 
 async function updateEntitlements(uid, entitlementUpdate) {
 
-    const metadataDoc = admin.firestore().collection("user-metadata").doc(uid);
+    const metadataDoc = integration.users.doc(uid);
     await metadataDoc.set({ entitlements: entitlementUpdate }, { merge: true });
 
 }

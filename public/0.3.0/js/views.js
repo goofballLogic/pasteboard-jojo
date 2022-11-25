@@ -138,7 +138,8 @@ function display(model, displayModel) {
                 <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
                 <dt>Session</dt><dd>${sessionId}</dd>
                 <dt>Display id</dt><dd>${id}</dd>
-                <dt>Connection URL</dt><dd>${href}</dd>
+                <dt>Connection URL</dt><dd>${href} <button class="copy-to-clipboard" data-data="${href}">Copy to clipboard</button></dd>
+
                 <form class="delete-display">
 
                     <input type="hidden" name="name" value="${name}" />
@@ -164,9 +165,9 @@ function display(model, displayModel) {
                 Choose board to display: <select name="next">
 
                     <option value="">None</option>
-                    ${model.boards && Object.values(model.boards).map(b => `
+                    ${model.boards && Object.entries(model.boards).map(([id, board]) => `
 
-                        <option value="${b.metadata?.id}">${b.metadata?.name}</option>
+                        <option value="${id}">${board.metadata?.name}</option>
 
                     `).join("")}
 
@@ -264,6 +265,7 @@ function boardLineItem([id, board]) {
 function board(model) {
 
     const { data } = model.board;
+    console.log(model);
     return `
 
         <nav class="editor">

@@ -5,6 +5,7 @@ const viewerConfigURL = new URL(viewerConfig);
 viewerConfigURL.search = location.search;
 
 const context = {
+    board: "awaiting config",
     sessionId: `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`
 };
 

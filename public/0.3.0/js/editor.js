@@ -55,6 +55,7 @@ function initialiseEditor(main) {
     zoomToFit(editorSurface, window.innerWidth - 20, window.innerHeight - 20);
     editorSurface.addEventListener("dblclick", e => {
 
+        console.log(e.target);
         if (e.target.classList.contains("note")) {
 
             const note = e.target;
@@ -226,7 +227,5 @@ function zoomToRatio(editorSurface, zoom) {
     editorSurface.style.transform = `scale(${zoom})`;
     editorSurface.style.left = `${(window.innerWidth - editorSurface.offsetWidth * zoom) / 2}px`;
     editorSurface.style.top = `${(window.innerHeight - editorSurface.offsetHeight * zoom) / 2}px`;
-    setTimeout(function () {
-        editorSurface.style.transition = "";
-    }, 300);
+    setTimeout(() => { editorSurface.style.transition = ""; }, 300);
 }

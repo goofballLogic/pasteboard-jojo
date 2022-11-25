@@ -1,5 +1,4 @@
 import { deleteFieldValue } from "../../integration.js";
-import { withPending } from "./status.js";
 
 function asKeys(obj) {
     return Object.entries(obj).reduce((agg, [key, val]) => {
@@ -24,10 +23,9 @@ function asKeys(obj) {
     }, []);
 }
 
-export async function keywiseUpdate(ref, patch) {
+export function keywiseUpdate(patch) {
 
-    const keywisePatch = decorateDeletions(Object.fromEntries(asKeys(patch)));
-    await withPending(() => ref.update(keywisePatch), "Saving...");
+    return decorateDeletions(Object.fromEntries(asKeys(patch)));
 
 }
 

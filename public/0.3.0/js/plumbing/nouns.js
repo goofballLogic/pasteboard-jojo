@@ -7,6 +7,8 @@ export function generateName(suffix) {
     ].filter(x => x).join("-");
 }
 
+window.generateName = generateName;
+
 function oneOf(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }

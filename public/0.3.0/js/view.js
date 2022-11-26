@@ -10,13 +10,32 @@ const context = {
 };
 
 const PING_INTERVAL = 1000 * 5;
+let invalidCount = 0;
 
 async function ping() {
 
     await ensureContextData();
-    const config = await fetchConfig();
-    if (!(config.board === context.board && config.version === context.version)) {
+    const config = await fetchConfig(); // error, undefined or payload
 
+    if (!config) {
+
+        if (invalidCount++ > 20) {
+
+            // invalid
+            clearInterval(pingInterval);
+            document.body.innerHTML = renderBoardDisplay(undefined);
+
+        } else {
+
+            // waiting
+            document.body.innerHTML = renderBoardDisplay(null);
+            document.title = "Awaiting configuration";
+
+        }
+
+    } else if (!(config.board === context.board && config.version === context.version)) {
+
+        invalidCount = 0;
         if ("data" in config) {
 
             document.body.innerHTML = renderBoardDisplay(config.data);
@@ -31,13 +50,17 @@ async function ping() {
 };
 
 ping();
-setInterval(ping, PING_INTERVAL);
+let pingInterval = setInterval(ping, PING_INTERVAL);
 
 async function fetchConfig() {
     const resp = await fetch(
         viewerConfigURL.href,
         { method: "POST", body: JSON.stringify(context), headers: { "Content-Type": "application/json" } }
     );
+    if (resp.status === 404)
+        return undefined;
+    if (!resp.ok)
+        throw new Error("Failed");
     return await resp.json();
 }
 

@@ -114,41 +114,32 @@ const weak = MINUTE * 2;
 
 function display(model, displayModel) {
 
-    const { health = {}, updated, config = {}, id, href } = displayModel;
-    const { ip, city, region, country, sessionId, err } = health;
-    const { name } = config;
-    const [connected] = decode(sessionId, "?")?.split("_");
+    console.log(displayModel);
+    const { updated, config = {}, id, href } = displayModel;
+    const { name, board: configuredBoard, state = {} } = config;
+    const { ip, city, region, country_name: country, sessionId, version: showingVersion, board: showingBoard, err } = state;
+    const connected = sessionId ? sessionId.split("_")[0] : null;
 
     const updatedAgo = ago(updated);
     const connectedAgo = ago(connected);
-    const showing = model.boards && model.boards[health?.boardId]?.metadata;
-    const configured = model.boards && model.boards[config?.boardId]?.metadata;
+
+    const showing = model.boards && model.boards[showingBoard]?.metadata;
+    const configured = model.boards && model.boards[configuredBoard]?.metadata;
 
     const status = err ? "error" : updatedAgo.age < healthy ? "healthy" : updatedAgo.age < weak ? "weak" : "dead";
     return `<li class="${status}">
 
-        <details>
 
-            <summary>${name || "Unrecognised"} - currently showing: ${showing?.name ?? "(None)"}</summary>
-            <div>
+            <h4>
+            ${name || "Unrecognised"}: ${showing?.name ? `Showing ${showing.name}` : "Awaiting configuration"}
+            </h4>
 
-                <dt>Updated</dt><dd>${updatedAgo.description} ago</dd>
-                <dt>Connected</td><dd>${connectedAgo.description} ago</dd>
-                <dt>IP</dt><dd>${ip}</dd>
-                <dt>Location</dt><dd>${city}, ${region}, ${country}</dd>
-                <dt>Session</dt><dd>${sessionId}</dd>
-                <dt>Display id</dt><dd>${id}</dd>
-                <dt>Connection URL</dt><dd>${href} <button class="copy-to-clipboard" data-data="${href}">Copy to clipboard</button></dd>
+            <section>
+                Id: ${id}<br />
+                Connection URL: <button class="copy-to-clipboard" data-data="${href}">Copy to clipboard</button>
+            </section>
 
-                <form class="delete-display">
-
-                    <input type="hidden" name="name" value="${name}" />
-                    <input type="hidden" name="id" value="${id}" />
-                    <button>Unregister and delete</button>
-
-                </form>
-
-            </div>
+            <hr />
             ${!err ? "" : `
 
                 <aside class="error">
@@ -157,8 +148,10 @@ function display(model, displayModel) {
                     ${err}
 
                 </aside>
+                <hr />
 
             `}
+
             <form class="schedule">
 
                 <input type="hidden" name="display_id" value="${id}" />
@@ -167,17 +160,37 @@ function display(model, displayModel) {
                     <option value="">None</option>
                     ${model.boards && Object.entries(model.boards).map(([id, board]) => `
 
-                        <option value="${id}">${board.metadata?.name}</option>
+                        <option value="${id}" ${id === configuredBoard ? "selected" : ""}>${board.metadata?.name}</option>
 
                     `).join("")}
 
                 </select>
                 <button>Schedule</button>
-                ${configured ? `Currently scheduled: ${configured.name}` : ""}
+
+            </form>
+            <hr />
+
+            ${!(displayModel.config?.state) ? "" : `
+
+                <table>
+                    <tr><td>Heart beat</td><td>${updatedAgo.description} ago</td></tr>
+                    <tr><td>Connected</td><td>${connectedAgo.description} ago</td></tr>
+                    <tr><td>IP</td><td>${ip}</td></tr>
+                    <tr><td>Location</td><td>${city}, ${region}, ${country}</td></tr>
+                    <tr><td>Session</td><td>${sessionId}</td></tr>
+                </table>
+                <hr />
+
+            `}
+
+            <form class="delete-display">
+
+                <input type="hidden" name="name" value="${name}" />
+                <input type="hidden" name="id" value="${id}" />
+                <button>Unregister and delete</button>
 
             </form>
 
-        </details>
 
     </li>`;
 

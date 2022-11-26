@@ -12,11 +12,16 @@ div.note {
     word-wrap: break-word;
 }
 
-div.empty {
+div.empty,
+div.invalid {
     position: absolute;
     bottom: 1rem;
     right: 1rem;
     color: #777;
+}
+
+div.invalid {
+    font-size: 3rem;
 }
 
 img.empty-placeholder {

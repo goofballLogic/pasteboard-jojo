@@ -23,7 +23,10 @@ exports.viewerconfig = functionsV2.https.
             state: req.body,
             ...integration
         });
-        res.send(JSON.stringify(result));
+        if (result)
+            res.send(JSON.stringify(result));
+        else
+            res.status(404).send();
 
     });
 

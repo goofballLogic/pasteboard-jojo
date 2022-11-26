@@ -45,9 +45,10 @@ const eventHandlers = [
             const displaysRef = displays.doc(accountId);
             const displaysSnapshot = await displaysRef.get();
             const existing = displaysSnapshot.data() ?? {};
-            let displayId = generateName();
+            const nonce = Math.random().toString().substring(2);
+            let displayId = generateName(nonce);
             while (displayId in existing)
-                displayId = generateName();
+                displayId = generateName(nonce);
             await displaysRef.set({ [displayId]: { name } }, { merge: true });
             renderMain();
 
@@ -67,8 +68,10 @@ const eventHandlers = [
         const name = data.get("name");
         const { accountId } = model;
         if (!id) return;
-        if (confirm(`Are you sure you want to delete display ${name} (${id})?`))
+        if (confirm(`Are you sure you want to delete display ${name} (${id})?`)) {
             await deleteDisplay({ id, accountId });
+            renderMain();
+        }
 
     }],
     ["new-board", form => async e => {

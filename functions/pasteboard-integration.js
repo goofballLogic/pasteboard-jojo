@@ -13,12 +13,19 @@ async function handleViewerConfigurationRequest({
     const snapshot = await ref.get();
 
     // no displays configured?
-    if (!snapshot.exists) return emptyConfig;
+    if (!snapshot.exists) return null;
 
     // freshen?
     const data = snapshot.data();
-    const config = (data && data[displayId]) || emptyConfig;
+    if (!(data && data[displayId])) return null;
 
+    const config = data[displayId];
+
+    if (JSON.stringify(state) !== JSON.stringify(config.state)) {
+
+        ref.set({ [displayId]: { state } }, { merge: true });
+
+    }
     if (!(config.board === state.board && config.version === state.version)) {
 
         // board or empty?

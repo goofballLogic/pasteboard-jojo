@@ -60,11 +60,13 @@ function initialiseEditor(main) {
 
             const note = e.target;
             const updated = prompt("Content", note.textContent);
-            note.textContent = updated;
-            send(noteModified, {
-                id: note.dataset.id,
-                content: { text: updated }
-            });
+            if (updated != null) {
+                note.textContent = updated;
+                send(noteModified, {
+                    id: note.dataset.id,
+                    content: { text: updated }
+                });
+            }
 
         } else {
 

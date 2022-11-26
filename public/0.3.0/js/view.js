@@ -1,7 +1,7 @@
 import { renderBoardDisplay } from "./display-render.js";
-import { viewerConfig } from "../../view-config.js";
+import { configHref } from "../../view-config.js";
 
-const viewerConfigURL = new URL(viewerConfig);
+const viewerConfigURL = new URL(configHref);
 viewerConfigURL.search = location.search;
 
 const context = {

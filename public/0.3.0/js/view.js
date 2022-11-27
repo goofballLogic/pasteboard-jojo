@@ -53,6 +53,9 @@ ping();
 let pingInterval = setInterval(ping, PING_INTERVAL);
 
 async function fetchConfig() {
+
+    context.clientHeight = document.documentElement.clientHeight;
+    context.clientWidth = document.documentElement.clientWidth;
     const resp = await fetch(
         viewerConfigURL.href,
         { method: "POST", body: JSON.stringify(context), headers: { "Content-Type": "application/json" } }

@@ -162,7 +162,7 @@ function selectedDisplay(model) {
 
     const { config = {}, id, href } = displayModel;
     const { name, board: configuredBoard, ping = 0, state = {} } = config;
-    const { ip, city, region, country_name: country, sessionId, err } = state;
+    const { ip, city, region, country_name: country, sessionId, err, clientWidth: width, clientHeight: height } = state;
 
     const connected = sessionId ? sessionId.split("_")[0] : null;
     const updatedAgo = ago(ping);
@@ -220,6 +220,7 @@ function selectedDisplay(model) {
                 <tr><td>IP</td><td>${ip}</td></tr>
                 <tr><td>Location</td><td>${city}, ${region}, ${country}</td></tr>
                 <tr><td>Session</td><td>${sessionId}</td></tr>
+                <tr><td>Dimensions</td><td>${width} x ${height}</td></tr>
             </table>
             <hr />
 

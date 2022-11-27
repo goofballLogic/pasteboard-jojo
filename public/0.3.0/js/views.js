@@ -160,8 +160,6 @@ function selectedDisplay(model) {
     const displayModel = model.displays.find(d => d.id == selectedDisplayId);
     if (!displayModel) return "";
 
-    console.log(displayModel);
-
     const { config = {}, id, href } = displayModel;
     const { name, board: configuredBoard, ping = 0, state = {} } = config;
     const { ip, city, region, country_name: country, sessionId, err } = state;
@@ -331,7 +329,6 @@ function boardLineItem([id, board]) {
 function board(model) {
 
     const { data } = model.board;
-    console.log(model);
     return `
 
         <nav class="editor">

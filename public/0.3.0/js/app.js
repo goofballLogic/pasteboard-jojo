@@ -4,7 +4,7 @@ import { updateEditor } from "./editor.js";
 import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./plumbing/bus.js";
 import { newDisplay, listDisplays, assignDisplay, deleteDisplay, renameDisplay } from "./displays.js";
 import { renderError, withPending } from "./plumbing/status.js";
-import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, displays, boards } from "../../integration.js";
+import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, boards } from "../../integration.js";
 import { generateName } from "./plumbing/nouns.js";
 import { keywiseUpdate } from "./plumbing/patching.js";
 
@@ -24,7 +24,8 @@ const eventHandlers = [
         const href = target.dataset?.data;
         if (href) {
             navigator.clipboard.writeText(href);
-            alert("Copied");
+            target.classList.add("success");
+            setTimeout(() => target.classList.remove("success"), 5000);
         }
     }],
     ["sign-in", (target) => {
@@ -153,7 +154,6 @@ function renderNav() {
 
 async function renderMain() {
 
-    console.log({ ...model });
     model.error = null;
     await updateModelFromURL();
     await updateModelFromBoardId();

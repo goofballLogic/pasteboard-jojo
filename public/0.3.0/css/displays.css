@@ -1,0 +1,19 @@
+.displays {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.new-display,
+.displays {
+    grid-column-start: 1;
+    grid-column-end: 2;
+}
+
+.selected-display {
+    width: 100%;
+    grid-row-start: 1;
+    grid-row-end: 999;
+    grid-column-start: 2;
+    grid-column-end: 3;
+}

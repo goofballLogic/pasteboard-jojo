@@ -2,7 +2,7 @@ import "./plumbing/integration-api.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./plumbing/bus.js";
-import { listDisplays, assignDisplay, deleteDisplay } from "./displays.js";
+import { newDisplay, listDisplays, assignDisplay, deleteDisplay, renameDisplay } from "./displays.js";
 import { renderError, withPending } from "./plumbing/status.js";
 import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, displays, boards } from "../../integration.js";
 import { generateName } from "./plumbing/nouns.js";
@@ -42,14 +42,7 @@ const eventHandlers = [
             const data = new FormData(form);
             const name = data.get("name");
             const { accountId } = model;
-            const displaysRef = displays.doc(accountId);
-            const displaysSnapshot = await displaysRef.get();
-            const existing = displaysSnapshot.data() ?? {};
-            const nonce = Math.random().toString().substring(2);
-            let displayId = generateName(nonce);
-            while (displayId in existing)
-                displayId = generateName(nonce);
-            await displaysRef.set({ [displayId]: { name } }, { merge: true });
+            await newDisplay({ accountId, name });
             renderMain();
 
         } catch (err) {
@@ -72,6 +65,18 @@ const eventHandlers = [
             await deleteDisplay({ id, accountId });
             renderMain();
         }
+
+    }],
+    ["rename-display", form => async e => {
+
+        e.preventDefault();
+        const data = new FormData(form);
+        const id = data.get("id");
+        const name = data.get("name");
+        const { accountId } = model;
+        if (!id) return;
+        await renameDisplay({ id, accountId, name });
+        renderMain();
 
     }],
     ["new-board", form => async e => {

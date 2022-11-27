@@ -4,7 +4,29 @@ service cloud.firestore {
     function isAccountAccessible(accountId) {
       return request.auth != null && request.auth.uid == accountId
     }
+    function accountEntitlements(accountId) {
+      return exists(/databases/$(database)/documents/entitlements/$(accountId))
+         ? get(/databases/$(database)/documents/entitlements/$(accountId)).data
+         : {}
+    }
 
+    function isCreateDisplayEntitled(accountId) {
+      return  isAccountAccessible(accountId)
+              && isCreateDisplayEntitledForEntitlements(accountEntitlements(accountId))
+    }
+    function isCreateDisplayEntitledForEntitlements(entitlements) {
+      return entitledDisplays(entitlements) > actualDisplays(entitlements)
+    }
+    function entitledDisplays(entitlements) {
+      return ("displays" in entitlements && "entitled" in entitlements.displays)
+        ? entitlements.displays.entitled
+        : 3
+    }
+    function actualDisplays(entitlements) {
+      return ("displays" in entitlements && "actual" in entitlements.displays)
+        ? entitlements.displays.actual
+        : 0
+    }
     match /users/{userId} {
       allow create, get, update, delete: if
         request.auth != null && request.auth.uid == userId
@@ -12,8 +34,9 @@ service cloud.firestore {
     match /boards/{accountId}/{rest=**} {
       allow create, read, update, delete: if isAccountAccessible(accountId)
     }
-    match /displays/{accountId} {
-      allow create, get, update, delete: if isAccountAccessible(accountId)
+    match /displays/{accountId}/{rest=**} {
+      allow read, update, delete: if isAccountAccessible(accountId)
+      allow create: if isCreateDisplayEntitled(accountId)
     }
   }
 }

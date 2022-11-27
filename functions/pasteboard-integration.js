@@ -84,5 +84,12 @@ async function handleBoardChange({ accountId, boardId, change, boards, displays,
 
 }
 
+async function refreshDisplaysEntitlement({ displays, accountId, entitlements }) {
+    const countSnapshot = await displays.doc(accountId).collection("data").count().get();
+    const actual = countSnapshot.data()?.count || 0;
+    await entitlements.doc(accountId).set({ displays: { actual } }, { merge: true });
+}
+
 exports.handleViewerConfigurationRequest = handleViewerConfigurationRequest;
 exports.handleBoardChange = handleBoardChange;
+exports.refreshDisplaysEntitlement = refreshDisplaysEntitlement;

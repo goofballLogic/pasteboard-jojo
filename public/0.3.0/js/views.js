@@ -2,7 +2,8 @@ import { renderBoardDisplay } from "./display-render.js";
 
 const routes = {
     home: "?",
-    display: "?mode=displays"
+    display: "?mode=displays",
+    displaySelected: "?mode=displays&displayId={displayId}"
 };
 
 function signIn() {
@@ -85,6 +86,16 @@ function displays(model) {
             : "No displays registered"}
 
     </ul>
+    ${newDisplayForm(model)}
+    ${selectedDisplay(model)}
+    `;
+
+}
+
+function newDisplayForm(model) {
+
+    return `
+
     <form class="new-display">
 
         <input name="name" value="" placeholder="Display name" />
@@ -114,85 +125,125 @@ const weak = MINUTE * 2;
 
 function display(model, displayModel) {
 
-    console.log(displayModel);
+    const { updated, config = {}, id } = displayModel;
+    const { name, state = {} } = config;
+    const { board: showingBoard, err } = state;
+
+    const updatedAgo = ago(updated);
+    const showing = model.boards && model.boards[showingBoard]?.metadata;
+
+    const selectHref = routes.displaySelected.replace("{displayId}", id);
+    const status = err ? "error" : updatedAgo.age < healthy ? "healthy" : updatedAgo.age < weak ? "weak" : "dead";
+
+    return `
+
+    <li class="${status}">
+
+        <a href="${selectHref}" class="client-side">
+
+            ${name || "Unrecognised"}: ${showing?.name ? `Showing ${showing.name}` : "Awaiting configuration"}
+
+        </a>
+
+
+    </li>
+
+    `;
+
+}
+
+function selectedDisplay(model) {
+
+    const selectedDisplayId = new URL(location.href).searchParams.get("displayId");
+    if (!selectedDisplayId) return "";
+
+    const displayModel = model.displays.find(d => d.id == selectedDisplayId);
+    if (!displayModel) return "";
+
     const { updated, config = {}, id, href } = displayModel;
     const { name, board: configuredBoard, state = {} } = config;
-    const { ip, city, region, country_name: country, sessionId, version: showingVersion, board: showingBoard, err } = state;
-    const connected = sessionId ? sessionId.split("_")[0] : null;
+    const { ip, city, region, country_name: country, sessionId, err } = state;
 
+    const connected = sessionId ? sessionId.split("_")[0] : null;
     const updatedAgo = ago(updated);
     const connectedAgo = ago(connected);
 
-    const showing = model.boards && model.boards[showingBoard]?.metadata;
-    const configured = model.boards && model.boards[configuredBoard]?.metadata;
+    return `
 
-    const status = err ? "error" : updatedAgo.age < healthy ? "healthy" : updatedAgo.age < weak ? "weak" : "dead";
-    return `<li class="${status}">
+    <article class="selected-display">
 
+        <section>
 
-            <h4>
-            ${name || "Unrecognised"}: ${showing?.name ? `Showing ${showing.name}` : "Awaiting configuration"}
-            </h4>
+            Id: ${id}<br />
+            Connect URL <button class="copy-to-clipboard" data-data="${href}">Copy to clipboard</button>
 
-            <section>
-                Id: ${id}<br />
-                Connection URL: <button class="copy-to-clipboard" data-data="${href}">Copy to clipboard</button>
-            </section>
+        </section>
 
-            <hr />
-            ${!err ? "" : `
+        <hr />
 
-                <aside class="error">
+        ${!err ? "" : `
 
-                    <header>Error</header>
-                    ${err}
+            <aside class="error">
 
-                </aside>
-                <hr />
+                <header>Error</header>
+                ${err}
 
-            `}
-
-            <form class="schedule">
-
-                <input type="hidden" name="display_id" value="${id}" />
-                Choose board to display: <select name="next">
-
-                    <option value="">None</option>
-                    ${model.boards && Object.entries(model.boards).map(([id, board]) => `
-
-                        <option value="${id}" ${id === configuredBoard ? "selected" : ""}>${board.metadata?.name}</option>
-
-                    `).join("")}
-
-                </select>
-                <button>Schedule</button>
-
-            </form>
+            </aside>
             <hr />
 
-            ${!(displayModel.config?.state) ? "" : `
+        `}
 
-                <table>
-                    <tr><td>Heart beat</td><td>${updatedAgo.description} ago</td></tr>
-                    <tr><td>Connected</td><td>${connectedAgo.description} ago</td></tr>
-                    <tr><td>IP</td><td>${ip}</td></tr>
-                    <tr><td>Location</td><td>${city}, ${region}, ${country}</td></tr>
-                    <tr><td>Session</td><td>${sessionId}</td></tr>
-                </table>
-                <hr />
+        <form class="schedule">
 
-            `}
+            <input type="hidden" name="display_id" value="${id}" />
+            Choose board to display: <select name="next">
 
-            <form class="delete-display">
+                <option value="">None</option>
+                ${model.boards && Object.entries(model.boards).map(([id, board]) => `
 
-                <input type="hidden" name="name" value="${name}" />
-                <input type="hidden" name="id" value="${id}" />
-                <button>Unregister and delete</button>
+                    <option value="${id}" ${id === configuredBoard ? "selected" : ""}>${board.metadata?.name}</option>
 
-            </form>
+                `).join("")}
 
+            </select>
+            <button>Schedule</button>
 
-    </li>`;
+        </form>
+
+        <hr />
+
+        ${!(displayModel.config?.state) ? "" : `
+
+            <table>
+                <tr><td>Heart beat</td><td>${updatedAgo.description} ago</td></tr>
+                <tr><td>Connected</td><td>${connectedAgo.description} ago</td></tr>
+                <tr><td>IP</td><td>${ip}</td></tr>
+                <tr><td>Location</td><td>${city}, ${region}, ${country}</td></tr>
+                <tr><td>Session</td><td>${sessionId}</td></tr>
+            </table>
+            <hr />
+
+        `}
+
+        <form class="delete-display">
+
+            <input type="hidden" name="name" value="${name}" />
+            <input type="hidden" name="id" value="${id}" />
+            <button>Unregister and delete</button>
+
+        </form>
+
+        <form class="rename-display">
+
+            <input type="hidden" name="id" value="${id}" />
+            <input type="text" name="name" value="${name}" />
+            <button>Rename</button>
+
+        </form>
+
+    </article>
+
+    `;
 
 }
 

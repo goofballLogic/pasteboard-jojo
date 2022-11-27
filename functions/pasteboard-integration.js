@@ -9,41 +9,36 @@ async function handleViewerConfigurationRequest({
 
     const [accountId, displayId] = Buffer.from(viewer, "base64").toString().split("_");
 
-    const ref = displays.doc(accountId);
+    const ref = displays.doc(accountId).collection("data").doc(displayId);
+    ref.set({ ping: Date.now() }, { merge: true });
     const snapshot = await ref.get();
 
-    // no displays configured?
-    if (!snapshot.exists) return null;
-
     // freshen?
-    const data = snapshot.data();
-    if (!(data && data[displayId])) return null;
+    const display = snapshot.data();
+    if (!display) return null;
 
-    const config = data[displayId];
+    if (JSON.stringify(state) !== JSON.stringify(display.state)) {
 
-    if (JSON.stringify(state) !== JSON.stringify(config.state)) {
-
-        ref.set({ [displayId]: { state } }, { merge: true });
+        ref.set({ state }, { merge: true });
 
     }
-    if (!(config.board === state.board && config.version === state.version)) {
+    if (!(display.board === state.board && display.version === state.version)) {
 
-        // board or empty?
-        if (config.board) {
+        if (display.board) {
 
-            const boardRef = boards.doc(accountId).collection("data").doc(config.board);
+            const boardRef = boards.doc(accountId).collection("data").doc(display.board);
             const boardSnapshot = await boardRef.get();
-            config.data = boardSnapshot.exists && boardSnapshot.data();
-            config.version = boardSnapshot.exists && boardSnapshot.updateTime.valueOf();
+            display.data = boardSnapshot.exists && boardSnapshot.data();
+            display.version = boardSnapshot.exists && boardSnapshot.updateTime.valueOf();
 
         } else {
 
-            config.data = null;
+            display.data = null;
 
         }
 
     }
-    return config;
+    return display;
 
 }
 

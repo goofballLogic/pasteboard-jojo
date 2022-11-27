@@ -125,11 +125,11 @@ const weak = MINUTE * 2;
 
 function display(model, displayModel) {
 
-    const { updated, config = {}, id } = displayModel;
-    const { name, state = {} } = config;
+    const { config = {}, id } = displayModel;
+    const { name, ping, state = {} } = config;
     const { board: showingBoard, err } = state;
 
-    const updatedAgo = ago(updated);
+    const updatedAgo = ago(ping);
     const showing = model.boards && model.boards[showingBoard]?.metadata;
 
     const selectHref = routes.displaySelected.replace("{displayId}", id);
@@ -141,7 +141,7 @@ function display(model, displayModel) {
 
         <a href="${selectHref}" class="client-side">
 
-            ${name || "Unrecognised"}: ${showing?.name ? `Showing ${showing.name}` : "Awaiting configuration"}
+            ${name || "Unrecognised"}: ${showing?.name ? `Showing ${showing.name}` : "Awaiting configuration"} (${status})
 
         </a>
 
@@ -160,12 +160,14 @@ function selectedDisplay(model) {
     const displayModel = model.displays.find(d => d.id == selectedDisplayId);
     if (!displayModel) return "";
 
-    const { updated, config = {}, id, href } = displayModel;
-    const { name, board: configuredBoard, state = {} } = config;
+    console.log(displayModel);
+
+    const { config = {}, id, href } = displayModel;
+    const { name, board: configuredBoard, ping = 0, state = {} } = config;
     const { ip, city, region, country_name: country, sessionId, err } = state;
 
     const connected = sessionId ? sessionId.split("_")[0] : null;
-    const updatedAgo = ago(updated);
+    const updatedAgo = ago(ping);
     const connectedAgo = ago(connected);
 
     return `

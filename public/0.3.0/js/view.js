@@ -33,18 +33,37 @@ async function ping() {
 
         }
 
-    } else if (!(config.board === context.board && config.version === context.version)) {
+    } else {
 
-        invalidCount = 0;
-        if ("data" in config) {
+        if (config.browserRefresh) {
 
-            document.body.innerHTML = renderBoardDisplay(config.data);
+            if (localStorage.getItem("browser-refresh") !== config.browserRefresh.toString()) {
+                console.log("Browser refresh", config.browserRefresh);
+                localStorage.setItem("browser-refresh", config.browserRefresh);
+                location.reload();
+            }
 
         }
-        document.title = config?.name || "Awaiting configuration";
-        context.board = config.board;
-        context.version = config.version;
+        if (config.screenshotRequest !== context.screenshotRequest) {
 
+            if (config.upload)
+                screenshot(config.upload);
+            context.screenshotRequest = config.screenshotRequest;
+
+        }
+        if (!(config.board === context.board && config.version === context.version)) {
+
+            invalidCount = 0;
+            if ("data" in config) {
+
+                document.body.innerHTML = renderBoardDisplay(config.data);
+
+            }
+            document.title = config?.name || "Awaiting configuration";
+            context.board = config.board;
+            context.version = config.version;
+
+        }
     }
 
 };
@@ -52,13 +71,25 @@ async function ping() {
 ping();
 let pingInterval = setInterval(ping, PING_INTERVAL);
 
+async function screenshot(url) {
+
+    console.log("Screenshot requested");
+    const body = document.documentElement.outerHTML.replace(/(<\/?)script/gi, "$1template");
+    await fetch(url, { method: "PUT", body, headers: { "Content-Type": "text/html" } });
+
+}
+
 async function fetchConfig() {
 
     context.clientHeight = document.documentElement.clientHeight;
     context.clientWidth = document.documentElement.clientWidth;
     const resp = await fetch(
         viewerConfigURL.href,
-        { method: "POST", body: JSON.stringify(context), headers: { "Content-Type": "application/json" } }
+        {
+            method: "POST",
+            body: JSON.stringify(context),
+            headers: { "Content-Type": "application/json" }
+        }
     );
     if (resp.status === 404)
         return undefined;

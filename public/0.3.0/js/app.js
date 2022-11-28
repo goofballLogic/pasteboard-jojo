@@ -2,9 +2,9 @@ import "./plumbing/integration-api.js";
 import { nav, main } from "./views.js"
 import { updateEditor } from "./editor.js";
 import { noteAdded, noteDeleted, noteModified, noteSentToBack, noteSentToFront, receive } from "./plumbing/bus.js";
-import { newDisplay, listDisplays, assignDisplay, deleteDisplay, renameDisplay } from "./displays.js";
+import { newDisplay, listDisplays, assignDisplay, deleteDisplay, renameDisplay, requestDisplayScreenshot, refreshDisplayBrowser } from "./displays.js";
 import { renderError, withPending } from "./plumbing/status.js";
-import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, boards } from "../../integration.js";
+import { googleAuthProvider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut, boards, storage, screenshots, getBytes } from "../../integration.js";
 import { generateName } from "./plumbing/nouns.js";
 import { keywiseUpdate } from "./plumbing/patching.js";
 
@@ -24,8 +24,7 @@ const eventHandlers = [
         const href = target.dataset?.data;
         if (href) {
             navigator.clipboard.writeText(href);
-            target.classList.add("success");
-            setTimeout(() => target.classList.remove("success"), 5000);
+            signalButtonSuccess(target);
         }
     }],
     ["sign-in", (target) => {
@@ -78,6 +77,28 @@ const eventHandlers = [
         if (!id) return;
         await renameDisplay({ id, accountId, name });
         renderMain();
+
+    }],
+    ["request-refresh", form => async e => {
+
+        e.preventDefault();
+        const data = new FormData(form);
+        const id = data.get("id");
+        const { accountId } = model;
+        if (!id) return;
+        await refreshDisplayBrowser({ id, accountId });
+        signalButtonSuccess(form.querySelector("button"));
+
+    }],
+    ["request-screenshot", form => async e => {
+
+        e.preventDefault();
+        const data = new FormData(form);
+        const id = data.get("id");
+        const { accountId } = model;
+        if (!id) return;
+        await requestDisplayScreenshot({ id, accountId });
+        signalButtonSuccess(form.querySelector("button"));
 
     }],
     ["new-board", form => async e => {
@@ -133,6 +154,11 @@ const eventHandlers = [
 
 ];
 
+function signalButtonSuccess(button) {
+    button.classList.add("success");
+    setTimeout(() => button.classList.remove("success"), 5000);
+}
+
 function handleAction(target) {
     for (let [key, handler] of eventHandlers) {
         if (target.classList.contains(key)) {
@@ -162,6 +188,7 @@ async function renderMain() {
     const rendered = doc.body.querySelector("main");
     document.querySelector("body > main").replaceWith(rendered);
     registerListeners(rendered);
+    populateScreenshots(rendered);
 
 }
 
@@ -486,3 +513,17 @@ function maxZ(board) { return Math.max(0, ...zs(board)); }
 
 function minZ(board) { return Math.min(0, ...zs(board)); }
 
+async function populateScreenshots(container) {
+    const frames = container.querySelectorAll("iframe.screenshot");
+    for (var f of frames) {
+        const id = f.dataset.id;
+        const file = screenshots.child(id);
+        const b = await getBytes(file);
+        const td = new TextDecoder("UTF-8");
+        const text = `<!DOCTYPE html>${td.decode(b)}`;
+        text.replace(/<script/gi, "<!--");
+        f.contentWindow.document.open();
+        f.contentWindow.document.write(text);
+        f.contentWindow.document.close();
+    }
+}

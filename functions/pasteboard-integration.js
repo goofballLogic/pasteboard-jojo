@@ -4,24 +4,23 @@ async function handleViewerConfigurationRequest({
     viewer,
     state,
     displays,
-    boards
+    boards,
+    screenshots,
+    deleteFieldValue
 }) {
 
     const [accountId, displayId] = Buffer.from(viewer, "base64").toString().split("_");
 
     const ref = displays.doc(accountId).collection("data").doc(displayId);
-    ref.set({ ping: Date.now() }, { merge: true });
+
+    // update
+    ref.set({ ping: Date.now(), state }, { merge: true });
+
+    // fetch
     const snapshot = await ref.get();
-
-    // freshen?
     const display = snapshot.data();
-    if (!display) return null;
 
-    if (JSON.stringify(state) !== JSON.stringify(display.state)) {
-
-        ref.set({ state }, { merge: true });
-
-    }
+    // notify
     if (!(display.board === state.board && display.version === state.version)) {
 
         if (display.board) {
@@ -34,6 +33,37 @@ async function handleViewerConfigurationRequest({
         } else {
 
             display.data = null;
+
+        }
+
+    }
+    if (display.screenshotRequest) {
+
+        const uploadFile = screenshots.file(`screenshots/${display.screenshotRequest.toString()}`);
+        const exists = await uploadFile.exists();
+        const metadata = exists[0] && await uploadFile.exists() && await uploadFile.getMetadata();
+        if (metadata && (metadata[0].size > 10)) {
+
+            await ref.set({ screenshotRequest: deleteFieldValue }, { merge: true });
+            delete display.screenshotRequest;
+
+        }
+
+    }
+    if (display.screenshotRequest !== state.screenshotRequest) {
+
+        if (display.screenshotRequest) {
+
+            const uploadFile = screenshots.file(`screenshots/${display.screenshotRequest.toString()}`);
+            await uploadFile.save("");
+            await uploadFile.makePublic();
+            const urls = await uploadFile.getSignedUrl({
+                version: 'v4',
+                action: 'write',
+                expires: Date.now() + 30 * 60 * 1000, // 30 mins
+                "Content-Type": "text/html"
+            });
+            display.upload = urls[0];
 
         }
 

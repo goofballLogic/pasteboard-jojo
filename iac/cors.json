@@ -4,8 +4,12 @@
             "*"
         ],
         "method": [
-            "GET"
+            "GET",
+            "PUT"
         ],
-        "maxAgeSeconds": 3600
+        "maxAgeSeconds": 3600,
+        "responseHeader": [
+            "Content-Type"
+        ]
     }
 ]

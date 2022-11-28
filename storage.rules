@@ -1,11 +1,8 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /outbox/{key}/config {
+    match /screenshots/{rest=**} {
       allow read: if true;
-    }
-    match /outbox/{key}/content {
-      allow read: if false;
     }
   }
 }

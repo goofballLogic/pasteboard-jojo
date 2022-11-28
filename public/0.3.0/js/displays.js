@@ -18,10 +18,18 @@ export async function renameDisplay({ id, accountId, name }) {
     await displayRef({ id, accountId }).set({ name }, { merge: true });
 }
 
+export async function requestDisplayScreenshot({ id, accountId }) {
+    await displayRef({ id, accountId }).set({ screenshotRequest: Date.now() }, { merge: true });
+}
+
 export async function newDisplay({ accountId, name }) {
     const nonce = Math.random().toString().substring(2);
     const id = generateName(nonce);
     await displayRef({ id, accountId }).set({ name });
+}
+
+export async function refreshDisplayBrowser({ accountId, id }) {
+    await displayRef({ id, accountId }).set({ browserRefresh: Date.now() }, { merge: true });
 }
 
 export async function listDisplays({ accountId }) {

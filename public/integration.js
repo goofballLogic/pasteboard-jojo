@@ -17,6 +17,7 @@ export const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
 
 // storage
 export const storage = app.storage();
+export const screenshots = storage.ref("screenshots");
 export const getBytes = s.getBytes;
 
 // firestore

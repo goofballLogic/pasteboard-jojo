@@ -17,3 +17,11 @@
     grid-column-start: 2;
     grid-column-end: 3;
 }
+
+iframe.screenshot {
+
+    border: solid 5px white;
+    box-shadow: 0 0 2px 0 black;
+    margin-top: 10px;
+
+}

@@ -168,6 +168,8 @@ function selectedDisplay(model) {
     const updatedAgo = ago(ping);
     const connectedAgo = ago(connected);
 
+    const requestedScreenshot = displayModel.config.state.screenshotRequest;
+
     return `
 
     <article class="selected-display">
@@ -241,6 +243,27 @@ function selectedDisplay(model) {
             <button>Rename</button>
 
         </form>
+
+        <form class="request-refresh">
+
+            <input type="hidden" name="id" value="${id}" />
+            <button>Refresh browser</button>
+
+        </form>
+
+        <form class="request-screenshot">
+
+            <input type="hidden" name="id" value="${id}" />
+            <button>Request screenshot</button>
+
+        </form>
+
+        ${!requestedScreenshot ? "" : `
+
+            <iframe class="screenshot" width="${width}" height="${height}" src="./screenshot" data-id="${requestedScreenshot}">
+            </iframe>
+
+        `}
 
     </article>
 

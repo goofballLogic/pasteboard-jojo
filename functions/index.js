@@ -1,21 +1,37 @@
 const functions = require("firebase-functions");
 const functionsV2 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
-const { handleViewerConfigurationRequest, handleBoardChange, handleDisplayChange, handleDisplayCreate, refreshDisplaysEntitlement } = require("./pasteboard-integration");
+const { FieldValue } = require("firebase-admin/firestore");
 
-const app = admin.initializeApp();
+const {
+    handleViewerConfigurationRequest,
+    handleBoardChange,
+    refreshDisplaysEntitlement
+} = require("./pasteboard-integration");
+
+const keyFile = require("./storage-admin.keyfile.json");
+const app = admin.initializeApp({
+    credential: admin.credential.cert(keyFile),
+    storageBucket: "paste-1c305.appspot.com"
+});
 const firestore = app.firestore();
+
+const storage = app.storage();
 
 const integration = {
     displays: firestore.collection("displays"),
     boards: firestore.collection("boards"),
     users: firestore.collection("users"),
     entitlements: firestore.collection("entitlements"),
-    logger: functions.logger
+    screenshots: storage.bucket(),
+    logger: functions.logger,
+    deleteFieldValue: FieldValue.delete()
 };
 
 exports.viewerconfig = functionsV2.https.
     onRequest({ cors: true }, async (req, res) => {
+
+
 
         const url = new URL(req.url, "ftp://yomomma");
         const viewer = url.search.replace(/^\?/, "");

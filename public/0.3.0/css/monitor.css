@@ -1,0 +1,28 @@
+.displays-monitor {
+    grid-column-start: 1;
+    grid-column-end: 3;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: var(--size-medium);
+}
+
+.monitor-display {
+    padding: var(--size-medium);
+    border: solid 1px silver;
+    box-shadow: 0 0 2px 0 black;
+    max-height: 10rem;
+
+}
+
+.monitor-display.dead {
+
+    background-color: #FEE;
+}
+
+.monitor-display.weak {
+    background-color: #FFD;
+}
+
+.monitor-display.healthy {
+    background-color: #EFE;
+}

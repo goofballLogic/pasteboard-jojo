@@ -192,6 +192,11 @@ async function renderMain() {
 
 }
 
+setInterval(function () {
+    if (model.state.mode === "monitor")
+        renderMain();
+}, 3000);
+
 async function updateModelFromBoardId() {
     const boardId = model.state.board;
     if (boardId) {
@@ -202,7 +207,7 @@ async function updateModelFromBoardId() {
 }
 
 async function updateModelFromMode() {
-    if (model.state.mode === "displays") {
+    if (model.state.mode === "displays" || model.state.mode === "monitor") {
         model.displays = await listDisplays({ accountId: model.user?.uid });
     }
 }

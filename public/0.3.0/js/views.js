@@ -3,7 +3,8 @@ import { renderBoardDisplay } from "./display-render.js";
 const routes = {
     home: "?",
     display: "?mode=displays",
-    displaySelected: "?mode=displays&displayId={displayId}"
+    displaySelected: "?mode=displays&displayId={displayId}",
+    monitor: "?mode=monitor"
 };
 
 function signIn() {
@@ -30,6 +31,7 @@ export function nav({ user }) {
         <nav>
             <a class="client-side" href="${routes.home}">Home</a>
             <a class="client-side" href="${routes.display}">Displays</a>
+            <a class="client-side" href="${routes.monitor}">Monitor</a>
             <div class="status">${user?.email ? acknowledgeUser(user) : signIn()}</div>
         </nav>
     `;
@@ -65,9 +67,15 @@ export function main(model) {
 function mainLoggedIn(model) {
 
     if (model.state?.mode === "displays") {
+
         return model.displays
             ? displays(model)
             : "No displays found";
+
+    } else if (model.state?.mode === "monitor") {
+
+        return monitor(model);
+
     } else {
         return model.state.board
             ? board(model)
@@ -82,12 +90,32 @@ function displays(model) {
     <ul class="displays">
 
         ${model.displays.length
-            ? model.displays.map(displayModel => display(model, displayModel)).join("")
+            ? model
+                .displays
+                .map(displayModel => display(model, displayModel))
+                .join("")
             : "No displays registered"}
 
     </ul>
     ${newDisplayForm(model)}
     ${selectedDisplay(model)}
+    `;
+
+}
+
+function monitor(model) {
+
+    return `
+
+    <article class="displays-monitor">
+        ${!model.displays.length
+            ? "No displays configured"
+            : model
+                .displays
+                .map(displayModel => monitorDisplay(model, displayModel))
+                .join("")}
+    </article>
+
     `;
 
 }
@@ -107,21 +135,48 @@ function newDisplayForm(model) {
 
 }
 
-function decode(data, fallback) {
-    try {
-        return atob(data);
-    } catch (err) {
-        console.warn(err);
-    }
-    return fallback;
-}
-
 const MINUTE = 60;
 const HOUR = MINUTE * 60;
 const DAY = HOUR * 24;
 
 const healthy = MINUTE * 1;
 const weak = MINUTE * 2;
+
+const statusText = {
+    "error": "ERROR: An error has occurred",
+    "healthy": "HEALTHY: Recently reported connection",
+    "weak": "WEAK: Connection is slow / undependable",
+    "dead": "MISSING: No recent connection detected"
+};
+
+function monitorDisplay(model, displayModel) {
+
+    const { config = {}, id } = displayModel;
+    const { name, ping, state = {} } = config;
+    const { board: showingBoard, err } = state;
+    const updatedAgo = ago(ping);
+    const status = err ? "error" : updatedAgo.age < healthy ? "healthy" : updatedAgo.age < weak ? "weak" : "dead";
+    const showing = model.boards && model.boards[showingBoard]?.metadata;
+
+    return `
+
+    <section class="monitor-display ${status}">
+
+        ${name || "Unrecognised"}
+        <br />
+        <br />
+        ${statusText[status]} ${err || ""}
+        <br />
+        <br />
+        ${showing?.name ? `Showing ${showing.name}` : "Awaiting configuration"}
+        <br />
+        <a class="client-side" href="${routes.displaySelected.replace("{displayId}", id)}">detail</a>
+
+    </section>
+
+    `;
+
+}
 
 function display(model, displayModel) {
 
@@ -168,7 +223,7 @@ function selectedDisplay(model) {
     const updatedAgo = ago(ping);
     const connectedAgo = ago(connected);
 
-    const requestedScreenshot = displayModel.config.state.screenshotRequest;
+    const requestedScreenshot = displayModel.config.state?.screenshotRequest;
 
     return `
 
@@ -254,7 +309,7 @@ function selectedDisplay(model) {
         <form class="request-screenshot">
 
             <input type="hidden" name="id" value="${id}" />
-            <button>Request screenshot</button>
+            <button>View</button>
 
         </form>
 

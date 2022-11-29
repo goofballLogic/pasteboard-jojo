@@ -149,6 +149,7 @@ const eventHandlers = [
             accountId: model.user.uid,
             boardId: nextBoardId
         });
+        signalButtonSuccess(form.querySelector("button"));
 
     }]
 

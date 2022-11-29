@@ -43,11 +43,11 @@ exports.viewerconfig = functions
     .https
     .onRequest(async (req, res) => {
 
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "*");
+        res.header("Access-Control-Allow-Methods", "*");
         if (req.method === "OPTIONS") {
 
-            res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "*");
-            res.header("Access-Control-Allow-Methods", "*");
             res.status(204).send();
 
         } else {

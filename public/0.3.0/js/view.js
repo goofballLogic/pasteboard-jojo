@@ -59,11 +59,11 @@ async function ping() {
                 document.body.innerHTML = renderBoardDisplay(config.data);
 
             }
-            document.title = config?.name || "Awaiting configuration";
             context.board = config.board;
             context.version = config.version;
 
         }
+        document.title = config?.name || "Awaiting configuration";
     }
 
 };

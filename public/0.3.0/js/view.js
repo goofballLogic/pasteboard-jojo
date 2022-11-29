@@ -9,7 +9,10 @@ const context = {
     sessionId: `${new Date().toISOString()}_${Math.round(Math.random() * Date.now())}`
 };
 
-const PING_INTERVAL = 1000 * 5;
+const PING_INTERVAL = ["127.0.0.1", "localhost"].includes(location.hostname)
+    ? 1000 * 5
+    : 1000 * 60;
+
 let invalidCount = 0;
 
 async function ping() {
